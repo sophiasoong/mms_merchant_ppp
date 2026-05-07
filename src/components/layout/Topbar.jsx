@@ -1,4 +1,6 @@
-export default function Topbar() {
+const VERSIONS = ['v1', 'v2', 'v3'];
+
+export default function Topbar({ version, onVersionChange }) {
   return (
     <header className="topbar">
       <div className="topbar-logo">
@@ -12,6 +14,21 @@ export default function Topbar() {
           <div className="topbar-logo-sub">Merchant Management System</div>
         </div>
       </div>
+
+      {onVersionChange && (
+        <div className="topbar-version-tabs">
+          {VERSIONS.map(v => (
+            <button
+              key={v}
+              className={`topbar-version-tab${version === v ? ' active' : ''}`}
+              onClick={() => onVersionChange(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="topbar-spacer"></div>
       <button className="topbar-back-btn">Back to MMS</button>
       <div className="topbar-lang">

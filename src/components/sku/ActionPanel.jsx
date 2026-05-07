@@ -1,6 +1,6 @@
 import { STATUS_CONFIG } from '../../data/promotions.js';
 
-export default function ActionPanel({ promo, viewMode = 'edit', onConfirm, onOptOut, onBatchUpload, onAuditHistory, onSaveAsDraft }) {
+export default function ActionPanel({ promo, viewMode = 'edit', version = 'v1', onConfirm, onOptOut, onBatchUpload, onAuditHistory, onSaveAsDraft }) {
   const isViewMode = viewMode === 'view';
   if (!promo) return null;
   const cfg = STATUS_CONFIG[promo.status];
@@ -44,7 +44,9 @@ export default function ActionPanel({ promo, viewMode = 'edit', onConfirm, onOpt
           {!isViewMode && (
             <>
               <button className="ap-btn ap-btn-primary" onClick={onConfirm}>Confirm</button>
-              <button className="ap-btn ap-btn-outline" onClick={onBatchUpload}>Batch Upload</button>
+              {version !== 'v3' && (
+                <button className="ap-btn ap-btn-outline" onClick={onBatchUpload}>Batch Upload</button>
+              )}
               <button className="ap-btn ap-btn-outline" onClick={onSaveAsDraft}>Save as Draft</button>
             </>
           )}

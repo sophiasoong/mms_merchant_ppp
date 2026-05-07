@@ -6,7 +6,7 @@ import ActionPanel from './ActionPanel.jsx';
 export default function SkuPreview({
   promo, skuRows,
   skuSearch, categoryFilter,
-  viewMode = 'edit',
+  viewMode = 'edit', version = 'v1',
   onSkuSearchChange, onCategoryChange,
   onShowList,
   onOpenConfirmDialog, onOpenOptOutDialog,
@@ -119,6 +119,8 @@ export default function SkuPreview({
               onSkuSearchChange={onSkuSearchChange}
               onCategoryChange={onCategoryChange}
               resultCount={filteredRows.length}
+              version={version}
+              onBatchUpload={version === 'v3' ? onBatchUpload : undefined}
             />
 
             <SkuTable
@@ -151,6 +153,7 @@ export default function SkuPreview({
         <ActionPanel
           promo={promo}
           viewMode={viewMode}
+          version={version}
           onConfirm={() => onOpenConfirmDialog('confirm', checkedIds)}
           onOptOut={() => onOpenOptOutDialog('optout')}
           onBatchUpload={onBatchUpload}

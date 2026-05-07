@@ -46,6 +46,9 @@ export default function App() {
   const [dateStartFilter, setDateStartFilter] = useState('');
   const [dateEndFilter, setDateEndFilter] = useState('');
 
+  // ── Version tab state ────────────────────────────────────────
+  const [version, setVersion] = useState('v1');
+
   // ── SKU filter state ─────────────────────────────────────────
   const [skuSearch, setSkuSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState([]);
@@ -221,7 +224,7 @@ export default function App() {
 
   return (
     <>
-      <Topbar />
+      <Topbar version={version} onVersionChange={setVersion} />
       <div className="shell">
         <Sidebar />
         <main className="main">
@@ -244,6 +247,7 @@ export default function App() {
               joinedIds={joinedIds}
               onPreview={handlePreview}
               onExitProgram={handleExitProgram}
+              version={version}
             />
           ) : (
             <SkuPreview
@@ -252,6 +256,7 @@ export default function App() {
               skuSearch={skuSearch}
               categoryFilter={categoryFilter}
               viewMode={skuViewMode}
+              version={version}
               onSkuSearchChange={setSkuSearch}
               onCategoryChange={setCategoryFilter}
               onShowList={showList}

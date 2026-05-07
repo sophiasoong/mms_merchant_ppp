@@ -3,7 +3,7 @@ import { SKU_ROWS_INITIAL } from '../../data/skus.js';
 
 const ALL_CATS = [...new Set(SKU_ROWS_INITIAL.map(s => s.cat))];
 
-export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChange, onCategoryChange, resultCount }) {
+export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChange, onCategoryChange, resultCount, version = 'v1', onBatchUpload }) {
   const [catDropOpen, setCatDropOpen] = useState(false);
   const [search, setSearch] = useState('');
   // pending: explicit set of checked cats (always full list when "all selected")
@@ -131,12 +131,17 @@ export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChang
 
       <div className="toolbar-spacer"></div>
       <span className="result-count">{resultCount} result{resultCount !== 1 ? 's' : ''}</span>
+      {version === 'v3' && onBatchUpload && (
+        <button className="btn-export" onClick={onBatchUpload}>Upload</button>
+      )}
       <button className="btn-export">
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
+        {version !== 'v3' && (
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        )}
         Export
       </button>
     </div>

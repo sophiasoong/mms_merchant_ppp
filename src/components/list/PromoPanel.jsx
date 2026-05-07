@@ -20,7 +20,7 @@ const AUDIT_HISTORY = {
   ],
 };
 
-export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, onExit, onEnroll, onViewDetail }) {
+export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, onExit, onEnroll, onViewDetail, layout = 'horizontal' }) {
   const [showDialog,     setShowDialog]    = useState(false);
   const [processing,     setProcessing]    = useState(false);
   const [auditModalOpen, setAuditModalOpen] = useState(
@@ -87,99 +87,146 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
 
   return (
     <>
-      <div className="promo-panel">
-        {/* Storefront Code + Program Status — merged row, no dividers */}
-        <div className="promo-panel-section">
-          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: 'var(--text-muted)' }}>
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <select
-            className="promo-panel-store-select"
-            value={selectedStore}
-            onChange={e => setSelectedStore(e.target.value)}
-          >
-            {storeOptions.map(code => (
-              <option key={code} value={code}>{code}</option>
-            ))}
-          </select>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              className="promo-panel-status-badge"
-              style={{ color: dotColor, borderColor: dotColor + '33', background: dotColor + '12' }}
-            >
-              <span className="promo-panel-status-dot" style={{ background: dotColor }} />
-              {panelLabel}
-            </span>
-            {(promo.status === 'exit_scheduled' || showExitScheduled) && (
-              <span className="exit-scheduled-tooltip-wrap">
-                <svg
-                  className="exit-scheduled-info-icon"
-                  width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
-                  style={{ cursor: 'default' }}
-                >
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <span className="exit-scheduled-tooltip">
-                  Exit takes effect from next promotion
-                </span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        {canExit && (
+      <div className={`promo-panel${layout === 'side' ? ' promo-panel-side' : ''}`}>
+        {layout === 'side' ? (
+          /* ── Side layout: labeled sections stacked vertically ── */
           <>
-            <div className="promo-panel-section promo-panel-actions">
-              {/* Exit Program button — shown after joining (all stores) or by default for H5413880 */}
-              {(isJoined || selectedStore === 'H5413880') && (
-                <div className="promo-panel-btn-tooltip-wrap">
-                  <button
-                    className="promo-panel-exit-btn"
-                    disabled={exitBtnDisabled}
-                    onClick={() => !exitBtnDisabled && setShowDialog(true)}
-                  >
-                    Exit Program
-                    {showRejected && (
-                      <span className="exit-rejected-icon-wrap">
-                        <svg width="13" height="13" fill="none" stroke="#F5222D" strokeWidth="2" viewBox="0 0 24 24" style={{ display: 'block' }}>
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="12" y1="8" x2="12" y2="12"/>
-                          <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        <span className="exit-rejected-tooltip">Exit Program application rejected. Please contact RM</span>
-                      </span>
-                    )}
-                  </button>
-                  {!showRejected && (
-                    <span className="promo-panel-btn-tooltip">Exit from program will be effective in the next promotion cycle.</span>
-                  )}
-                </div>
-              )}
-
-              {/* Enroll / View Detail */}
-              {(isJoined || selectedStore === 'H5413880') ? (
-                <button className="promo-panel-view-btn" onClick={() => onViewDetail?.(promo.id)}>
-                  View Detail
-                </button>
-              ) : (
-                <div className="promo-panel-btn-tooltip-wrap">
-                  <button className="promo-panel-enroll-btn" onClick={() => onEnroll?.(promo.id)}>
-                    Enroll
-                  </button>
-                  <span className="promo-panel-btn-tooltip">Enrollment will be effective in the next promotion cycle.</span>
-                </div>
-              )}
-              <button
-                className="promo-panel-audit-btn"
-                onClick={() => setAuditModalOpen(true)}
+            <div className="promo-panel-section">
+              <div className="promo-panel-label">STOREFRONT CODE</div>
+              <select
+                className="promo-panel-store-select"
+                value={selectedStore}
+                onChange={e => setSelectedStore(e.target.value)}
               >
-                Audit History
-              </button>
+                {storeOptions.map(code => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
+              </select>
             </div>
+
+            <div className="promo-panel-divider" />
+
+            <div className="promo-panel-section">
+              <div className="promo-panel-label">PROGRAM STATUS</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  className="promo-panel-status-badge"
+                  style={{ color: dotColor, borderColor: dotColor + '33', background: dotColor + '12' }}
+                >
+                  <span className="promo-panel-status-dot" style={{ background: dotColor }} />
+                  {panelLabel}
+                </span>
+                {(promo.status === 'exit_scheduled' || showExitScheduled) && (
+                  <span className="exit-scheduled-tooltip-wrap">
+                    <svg className="exit-scheduled-info-icon" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ cursor: 'default' }}>
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span className="exit-scheduled-tooltip">Exit takes effect from next promotion</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {canExit && (
+              <>
+                <div className="promo-panel-divider" />
+                <div className="promo-panel-section promo-panel-actions promo-panel-actions-full">
+                  {(isJoined || selectedStore === 'H5413880') && (
+                    <div className="promo-panel-btn-tooltip-wrap" style={{ width: '100%' }}>
+                      <button className="promo-panel-exit-btn" style={{ width: '100%' }} disabled={exitBtnDisabled} onClick={() => !exitBtnDisabled && setShowDialog(true)}>
+                        Exit Program
+                        {showRejected && (
+                          <span className="exit-rejected-icon-wrap">
+                            <svg width="13" height="13" fill="none" stroke="#F5222D" strokeWidth="2" viewBox="0 0 24 24" style={{ display: 'block' }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span className="exit-rejected-tooltip">Exit Program application rejected. Please contact RM</span>
+                          </span>
+                        )}
+                      </button>
+                      {!showRejected && <span className="promo-panel-btn-tooltip">Exit from program will be effective in the next promotion cycle.</span>}
+                    </div>
+                  )}
+                  {(isJoined || selectedStore === 'H5413880') ? (
+                    <button className="promo-panel-view-btn" style={{ width: '100%' }} onClick={() => onViewDetail?.(promo.id)}>View Detail</button>
+                  ) : (
+                    <div className="promo-panel-btn-tooltip-wrap" style={{ width: '100%' }}>
+                      <button className="promo-panel-enroll-btn" style={{ width: '100%' }} onClick={() => onEnroll?.(promo.id)}>Enroll</button>
+                      <span className="promo-panel-btn-tooltip">Enrollment will be effective in the next promotion cycle.</span>
+                    </div>
+                  )}
+                  <button className="promo-panel-audit-btn" style={{ width: '100%' }} onClick={() => setAuditModalOpen(true)}>Audit History</button>
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          /* ── Horizontal layout: icon + select + badge in one row ── */
+          <>
+            <div className="promo-panel-section">
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: 'var(--text-muted)' }}>
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <select
+                className="promo-panel-store-select"
+                value={selectedStore}
+                onChange={e => setSelectedStore(e.target.value)}
+              >
+                {storeOptions.map(code => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  className="promo-panel-status-badge"
+                  style={{ color: dotColor, borderColor: dotColor + '33', background: dotColor + '12' }}
+                >
+                  <span className="promo-panel-status-dot" style={{ background: dotColor }} />
+                  {panelLabel}
+                </span>
+                {(promo.status === 'exit_scheduled' || showExitScheduled) && (
+                  <span className="exit-scheduled-tooltip-wrap">
+                    <svg className="exit-scheduled-info-icon" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ cursor: 'default' }}>
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span className="exit-scheduled-tooltip">Exit takes effect from next promotion</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {canExit && (
+              <>
+                <div className="promo-panel-section promo-panel-actions">
+                  {(isJoined || selectedStore === 'H5413880') && (
+                    <div className="promo-panel-btn-tooltip-wrap">
+                      <button className="promo-panel-exit-btn" disabled={exitBtnDisabled} onClick={() => !exitBtnDisabled && setShowDialog(true)}>
+                        Exit Program
+                        {showRejected && (
+                          <span className="exit-rejected-icon-wrap">
+                            <svg width="13" height="13" fill="none" stroke="#F5222D" strokeWidth="2" viewBox="0 0 24 24" style={{ display: 'block' }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span className="exit-rejected-tooltip">Exit Program application rejected. Please contact RM</span>
+                          </span>
+                        )}
+                      </button>
+                      {!showRejected && <span className="promo-panel-btn-tooltip">Exit from program will be effective in the next promotion cycle.</span>}
+                    </div>
+                  )}
+                  {(isJoined || selectedStore === 'H5413880') ? (
+                    <button className="promo-panel-view-btn" onClick={() => onViewDetail?.(promo.id)}>View Detail</button>
+                  ) : (
+                    <div className="promo-panel-btn-tooltip-wrap">
+                      <button className="promo-panel-enroll-btn" onClick={() => onEnroll?.(promo.id)}>Enroll</button>
+                      <span className="promo-panel-btn-tooltip">Enrollment will be effective in the next promotion cycle.</span>
+                    </div>
+                  )}
+                  <button className="promo-panel-audit-btn" onClick={() => setAuditModalOpen(true)}>Audit History</button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

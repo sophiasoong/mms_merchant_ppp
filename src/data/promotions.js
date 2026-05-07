@@ -57,6 +57,19 @@ export const AUDIT_DATA = {
   ],
 };
 
+// Store-level status data for the "Program Status by Stores" detail view
+// Matches dashboard counts: Open×2, Exit Rejected×1, Exit Scheduled×3, Opted Out×2
+export const STORE_STATUS_DATA = [
+  { storefrontCode: 'H2748138', status: 'open' },
+  { storefrontCode: 'H4981529', status: 'open',           action: 'exit' },
+  { storefrontCode: 'H5413880', status: 'open',           action: 'exit', showInfo: true },
+  { storefrontCode: 'H6234571', status: 'exit_scheduled' },
+  { storefrontCode: 'H7823456', status: 'exit_scheduled' },
+  { storefrontCode: 'H8912345', status: 'exit_scheduled' },
+  { storefrontCode: 'H9001234', status: 'opted_out' },
+  { storefrontCode: 'H1123456', status: 'opted_out' },
+];
+
 export const DIALOG_CONFIG = {
   confirm: {
     iconCls: "dialog-icon-confirm",
