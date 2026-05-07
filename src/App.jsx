@@ -48,7 +48,7 @@ export default function App() {
 
   // ── SKU filter state ─────────────────────────────────────────
   const [skuSearch, setSkuSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState([]);
 
   // ── Figma capture URL-param bootstrap ───────────────────────
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function App() {
   const showSku = useCallback((promo, mode = 'edit') => {
     setCurrentPromo(promo);
     setSkuSearch('');
-    setCategoryFilter('All');
+    setCategoryFilter([]);
     setSkuViewMode(mode);
     if (mode === 'view') {
       // Confirmed view: locked if has a PPP price, excluded otherwise

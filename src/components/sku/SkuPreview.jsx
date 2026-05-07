@@ -23,7 +23,7 @@ export default function SkuPreview({
     const q = skuSearch.trim().toLowerCase();
     return skuRows.filter(s => {
       const matchQ = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q);
-      const matchCat = !categoryFilter || categoryFilter === 'All' || s.cat === categoryFilter;
+      const matchCat = !categoryFilter || categoryFilter.length === 0 || categoryFilter.includes(s.cat);
       return matchQ && matchCat;
     });
   }, [skuRows, skuSearch, categoryFilter]);

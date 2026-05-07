@@ -1,24 +1,59 @@
 import { useState, useEffect, useRef } from 'react';
 import { SKU_ROWS_INITIAL } from '../../data/skus.js';
 
-const ALL_CATS = ['All', ...new Set(SKU_ROWS_INITIAL.map(s => s.cat))];
+const ALL_CATS = [...new Set(SKU_ROWS_INITIAL.map(s => s.cat))];
 
 export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChange, onCategoryChange, resultCount }) {
   const [catDropOpen, setCatDropOpen] = useState(false);
-  const catBtnRef = useRef(null);
+  const [search, setSearch] = useState('');
+  // pending: explicit set of checked cats (always full list when "all selected")
+  const [pending, setPending] = useState(ALL_CATS);
+  const dropRef = useRef(null);
+
+  function openDrop() {
+    // initialise from current filter: [] means all
+    setPending(categoryFilter.length === 0 ? ALL_CATS : [...categoryFilter]);
+    setSearch('');
+    setCatDropOpen(true);
+  }
 
   useEffect(() => {
     if (!catDropOpen) return;
     function handleClick(e) {
-      if (catBtnRef.current && !catBtnRef.current.contains(e.target)) {
-        setCatDropOpen(false);
-      }
+      if (dropRef.current && !dropRef.current.contains(e.target)) setCatDropOpen(false);
     }
-    setTimeout(() => document.addEventListener('click', handleClick), 0);
-    return () => document.removeEventListener('click', handleClick);
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => document.removeEventListener('mousedown', handleClick);
   }, [catDropOpen]);
 
-  const catLabel = categoryFilter === 'All' || !categoryFilter ? 'Category' : categoryFilter;
+  const filteredCats = ALL_CATS.filter(c => c.toLowerCase().includes(search.toLowerCase()));
+
+  const allChecked = pending.length === ALL_CATS.length;
+  const someChecked = pending.length > 0 && pending.length < ALL_CATS.length;
+
+  function toggleCat(cat) {
+    setPending(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  }
+
+  function handleSelectAll(e) {
+    setPending(e.target.checked ? ALL_CATS : []);
+  }
+
+  function handleApply() {
+    // empty array = no filter (all), otherwise pass selected cats
+    onCategoryChange(pending.length === ALL_CATS.length ? [] : pending);
+    setCatDropOpen(false);
+  }
+
+  function handleClear() {
+    setPending([]);
+  }
+
+  const activeCount = categoryFilter.length;
+  const catLabel = activeCount > 0 ? `Category (${activeCount})` : 'Category';
+  const isActive = activeCount > 0;
 
   return (
     <div className="table-toolbar">
@@ -33,9 +68,9 @@ export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChang
       </div>
 
       <div
-        className={`filter-select${(categoryFilter && categoryFilter !== 'All') ? ' active' : ''}`}
-        ref={catBtnRef}
-        onClick={() => setCatDropOpen(p => !p)}
+        className={`filter-select${isActive ? ' active' : ''}`}
+        ref={dropRef}
+        onClick={() => !catDropOpen && openDrop()}
         style={{ position: 'relative' }}
       >
         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -43,22 +78,53 @@ export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChang
         <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
 
         {catDropOpen && (
-          <div style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 999,
-            background: '#fff', border: '1px solid #D4D4D4', borderRadius: '6px',
-            boxShadow: '0 4px 12px rgba(0,0,0,.12)', minWidth: '160px', padding: '4px 0', fontSize: '13px',
-          }}>
-            {ALL_CATS.map(c => (
-              <div
-                key={c}
-                onClick={(e) => { e.stopPropagation(); onCategoryChange(c); setCatDropOpen(false); }}
-                style={{ padding: '8px 14px', cursor: 'pointer', color: '#3D3D3D' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#ECEAFD'}
-                onMouseLeave={e => e.currentTarget.style.background = ''}
-              >
-                {c}
-              </div>
-            ))}
+          <div className="cat-dropdown" onClick={e => e.stopPropagation()}>
+            {/* Search */}
+            <div className="cat-dropdown-search">
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search in filters"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+
+            {/* Select all */}
+            <div className="cat-dropdown-item cat-dropdown-select-all">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={el => { if (el) el.indeterminate = someChecked; }}
+                  onChange={handleSelectAll}
+                />
+                Select all
+              </label>
+            </div>
+
+            {/* Category list */}
+            <div className="cat-dropdown-list">
+              {filteredCats.map(cat => (
+                <div key={cat} className="cat-dropdown-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={pending.includes(cat)}
+                      onChange={() => toggleCat(cat)}
+                    />
+                    {cat}
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="cat-dropdown-footer">
+              <button className="cat-dropdown-clear" onClick={handleClear}>Clear All</button>
+              <button className="cat-dropdown-apply" onClick={handleApply}>Apply</button>
+            </div>
           </div>
         )}
       </div>

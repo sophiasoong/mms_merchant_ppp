@@ -59,6 +59,20 @@ export default function PromoList({
         Personal Price Promotion (PPP) offers personalised discounts to targeted customers based on their shopping behaviour. Enrolled merchants participate in monthly promotion cycles — review your eligible SKUs, set PPP prices, and confirm your SKU list before each cycle's deadline.
       </p>
 
+      {selectedPromo && (
+        <div className="promo-panel-center-wrap">
+          <PromoPanel
+            promo={selectedPromo}
+            allPromos={promotions}
+            isExited={exitedIds.has(selectedPromo.id)}
+            isJoined={joinedIds.has(selectedPromo.id)}
+            onExit={handleExit}
+            onEnroll={onEnroll}
+            onViewDetail={onViewDetail}
+          />
+        </div>
+      )}
+
       <div className="promo-list-body">
         <div className="card">
           <PromoToolbar
@@ -105,18 +119,6 @@ export default function PromoList({
             </button>
           </div>
         </div>
-
-        {selectedPromo && (
-          <PromoPanel
-            promo={selectedPromo}
-            allPromos={promotions}
-            isExited={exitedIds.has(selectedPromo.id)}
-            isJoined={joinedIds.has(selectedPromo.id)}
-            onExit={handleExit}
-            onEnroll={onEnroll}
-            onViewDetail={onViewDetail}
-          />
-        )}
       </div>
     </div>
   );
