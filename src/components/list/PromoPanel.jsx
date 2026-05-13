@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { STATUS_CONFIG } from '../../data/promotions.js';
 
 const DOT_COLORS = {
@@ -27,8 +27,22 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
     () => new URLSearchParams(window.location.search).get('figmacapture') === 'audit-history'
   );
   const [selectedStore,  setSelectedStore] = useState(promo?.storefrontCode);
+  const [storeDropOpen,  setStoreDropOpen]  = useState(false);
+  const [storeSearch,    setStoreSearch]    = useState('');
+  const storeDropRef   = useRef(null);
+  const storeSearchRef = useRef(null);
   // exitFlow: null | { store, phase: 'pending'|'exit_scheduled'|'opted_out'|'rejected' }
   const [exitFlow, setExitFlow] = useState(null);
+
+  // Close store dropdown on outside click
+  useEffect(() => {
+    if (!storeDropOpen) return;
+    function handleClick(e) {
+      if (storeDropRef.current && !storeDropRef.current.contains(e.target)) setStoreDropOpen(false);
+    }
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [storeDropOpen]);
 
   // Reset selected store when promo changes
   if (selectedStore !== promo?.storefrontCode &&
@@ -89,53 +103,102 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
     <>
       <div className={`promo-panel${layout === 'side' ? ' promo-panel-side' : ''}`}>
         {layout === 'side' ? (
-          /* ── Side layout: labeled sections stacked vertically ── */
+          /* ── Side layout: DS "Action Panel" card ── */
           <>
-            <div className="promo-panel-section">
-              <div className="promo-panel-label">STOREFRONT CODE</div>
-              <select
-                className="promo-panel-store-select"
-                value={selectedStore}
-                onChange={e => setSelectedStore(e.target.value)}
-              >
-                {storeOptions.map(code => (
-                  <option key={code} value={code}>{code}</option>
-                ))}
-              </select>
+            {/* Header */}
+            <div className="promo-panel-header">
+              <span className="promo-panel-title">Program Settings</span>
+              <button className="promo-panel-info-btn" aria-label="Program info">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </button>
             </div>
 
-            <div className="promo-panel-divider" />
-
-            <div className="promo-panel-section">
-              <div className="promo-panel-label">PROGRAM STATUS</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span
-                  className="promo-panel-status-badge"
-                  style={{ color: dotColor, borderColor: dotColor + '33', background: dotColor + '12' }}
-                >
-                  <span className="promo-panel-status-dot" style={{ background: dotColor }} />
-                  {panelLabel}
-                </span>
-                {(promo.status === 'exit_scheduled' || showExitScheduled) && (
-                  <span className="exit-scheduled-tooltip-wrap">
-                    <svg className="exit-scheduled-info-icon" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ cursor: 'default' }}>
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    <span className="exit-scheduled-tooltip">Exit takes effect from next promotion</span>
-                  </span>
-                )}
+            {/* Body */}
+            <div className="promo-panel-body">
+              {/* Storefront Code */}
+              <div className="promo-panel-field">
+                <div className="promo-panel-field-label">
+                  Storefront Code <span className="field-required">*</span>
+                </div>
+                <div className="store-select-wrap" ref={storeDropRef}>
+                  {/* Closed: value + chevron */}
+                  {!storeDropOpen ? (
+                    <div
+                      className="store-select-trigger"
+                      onClick={() => { setStoreSearch(''); setStoreDropOpen(true); setTimeout(() => storeSearchRef.current?.focus(), 0); }}
+                    >
+                      <span className="store-select-value">{selectedStore}</span>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: '#A6A6A6' }}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </div>
+                  ) : (
+                    /* Open: search input + chevron */
+                    <div className="store-select-trigger open">
+                      <input
+                        ref={storeSearchRef}
+                        className="store-select-search-input"
+                        placeholder="Search…"
+                        value={storeSearch}
+                        onChange={e => setStoreSearch(e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                      />
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: '#A6A6A6' }}>
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                      </svg>
+                    </div>
+                  )}
+                  {storeDropOpen && (
+                    <div className="store-select-dropdown">
+                      {storeOptions
+                        .filter(c => c.toLowerCase().includes(storeSearch.toLowerCase()))
+                        .map(code => (
+                          <div
+                            key={code}
+                            className={`store-select-item${code === selectedStore ? ' selected' : ''}`}
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => { setSelectedStore(code); setStoreDropOpen(false); }}
+                          >
+                            {code}
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {canExit && (
-              <>
-                <div className="promo-panel-divider" />
-                <div className="promo-panel-section promo-panel-actions promo-panel-actions-full">
+              {/* Status */}
+              <div className="promo-panel-field">
+                <div className="promo-panel-field-label">Status</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="dot-tag">
+                    <span className="dot-tag-dot" style={{ background: dotColor }} />
+                    {panelLabel}
+                  </span>
+                  {(promo.status === 'exit_scheduled' || showExitScheduled) && (
+                    <span className="exit-scheduled-tooltip-wrap">
+                      <svg className="exit-scheduled-info-icon" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ cursor: 'default' }}>
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <span className="exit-scheduled-tooltip">Exit takes effect from next promotion</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              {canExit && (
+                <div className="promo-panel-actions promo-panel-actions-full">
                   {(isJoined || selectedStore === 'H5413880') && (
-                    <div className="promo-panel-btn-tooltip-wrap" style={{ width: '100%' }}>
-                      <button className="promo-panel-exit-btn" style={{ width: '100%' }} disabled={exitBtnDisabled} onClick={() => !exitBtnDisabled && setShowDialog(true)}>
+                    <div className="promo-panel-btn-tooltip-wrap">
+                      <button className="promo-panel-exit-btn" disabled={exitBtnDisabled} onClick={() => !exitBtnDisabled && setShowDialog(true)}>
                         Exit Program
                         {showRejected && (
                           <span className="exit-rejected-icon-wrap">
@@ -148,17 +211,17 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
                     </div>
                   )}
                   {(isJoined || selectedStore === 'H5413880') ? (
-                    <button className="promo-panel-view-btn" style={{ width: '100%' }} onClick={() => onViewDetail?.(promo.id)}>View Detail</button>
+                    <button className="promo-panel-view-btn" onClick={() => onViewDetail?.(promo.id)}>View Detail</button>
                   ) : (
-                    <div className="promo-panel-btn-tooltip-wrap" style={{ width: '100%' }}>
-                      <button className="promo-panel-enroll-btn" style={{ width: '100%' }} onClick={() => onEnroll?.(promo.id)}>Enroll</button>
+                    <div className="promo-panel-btn-tooltip-wrap">
+                      <button className="promo-panel-enroll-btn" onClick={() => onEnroll?.(promo.id)}>Enroll Program</button>
                       <span className="promo-panel-btn-tooltip">Enrollment will be effective in the next promotion cycle.</span>
                     </div>
                   )}
-                  <button className="promo-panel-audit-btn" style={{ width: '100%' }} onClick={() => setAuditModalOpen(true)}>Audit History</button>
+                  <button className="promo-panel-audit-btn" onClick={() => setAuditModalOpen(true)}>Audit History</button>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </>
         ) : (
           /* ── Horizontal layout: icon + select + badge in one row ── */
@@ -168,21 +231,56 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
-              <select
-                className="promo-panel-store-select"
-                value={selectedStore}
-                onChange={e => setSelectedStore(e.target.value)}
-              >
-                {storeOptions.map(code => (
-                  <option key={code} value={code}>{code}</option>
-                ))}
-              </select>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span
-                  className="promo-panel-status-badge"
-                  style={{ color: dotColor, borderColor: dotColor + '33', background: dotColor + '12' }}
-                >
-                  <span className="promo-panel-status-dot" style={{ background: dotColor }} />
+
+              {/* Custom store select — same as side panel */}
+              <div className="store-select-wrap store-select-wrap-inline" ref={storeDropRef}>
+                {!storeDropOpen ? (
+                  <div
+                    className="store-select-trigger"
+                    onClick={() => { setStoreSearch(''); setStoreDropOpen(true); setTimeout(() => storeSearchRef.current?.focus(), 0); }}
+                  >
+                    <span className="store-select-value">{selectedStore}</span>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: '#A6A6A6' }}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="store-select-trigger open">
+                    <input
+                      ref={storeSearchRef}
+                      className="store-select-search-input"
+                      placeholder="Search…"
+                      value={storeSearch}
+                      onChange={e => setStoreSearch(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                    />
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, color: '#A6A6A6' }}>
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                  </div>
+                )}
+                {storeDropOpen && (
+                  <div className="store-select-dropdown">
+                    {storeOptions
+                      .filter(c => c.toLowerCase().includes(storeSearch.toLowerCase()))
+                      .map(code => (
+                        <div
+                          key={code}
+                          className={`store-select-item${code === selectedStore ? ' selected' : ''}`}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => { setSelectedStore(code); setStoreDropOpen(false); }}
+                        >
+                          {code}
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="dot-tag">
+                  <span className="dot-tag-dot" style={{ background: dotColor }} />
                   {panelLabel}
                 </span>
                 {(promo.status === 'exit_scheduled' || showExitScheduled) && (
@@ -239,7 +337,7 @@ export default function PromoPanel({ promo, allPromos = [], isExited, isJoined, 
         >
           <div className="dialog-box" style={{ maxWidth: 480 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <span className="dialog-title" style={{ marginBottom: 0 }}>Audit History</span>
+              <span className="dialog-title" style={{ marginBottom: 0 }}>Log Detail</span>
               <button
                 onClick={() => setAuditModalOpen(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}

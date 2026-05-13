@@ -1,5 +1,46 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { SKU_PART_CONFIG } from '../../data/skus.js';
+
+function SortIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 10 12" fill="#A6A6A6" style={{ verticalAlign: 'middle' }}>
+      <path d="M5 1L9 5H1L5 1Z"/>
+      <path d="M5 11L1 7H9L5 11Z"/>
+    </svg>
+  );
+}
+
+function InfoIcon({ text }) {
+  const [pos, setPos] = useState(null);
+  const iconRef = useRef(null);
+
+  function handleMouseEnter() {
+    const r = iconRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.top - 8, left: r.left + r.width / 2 });
+  }
+
+  return (
+    <span
+      ref={iconRef}
+      className="info-icon-wrap"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setPos(null)}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A6A6A6" strokeWidth="2" style={{ verticalAlign: 'middle', flexShrink: 0 }}>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {pos && createPortal(
+        <div className="info-tooltip-fixed" style={{ top: pos.top, left: pos.left }}>
+          {text}
+        </div>,
+        document.body
+      )}
+    </span>
+  );
+}
 
 export default function SkuTable({ rows, checkedIds, onToggleRow, onToggleAll, limitHit, unchecked, threshold, isConfirmed, viewMode = 'edit' }) {
   const isViewMode = viewMode === 'view';
@@ -40,26 +81,24 @@ export default function SkuTable({ rows, checkedIds, onToggleRow, onToggleAll, l
                 />
               </th>
             )}
-            <th>SKU Image</th>
+            <th>Image</th>
             <th className="sortable">
-              SKU ID{' '}
-              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+              SKU ID{' '}<SortIcon />
             </th>
             <th>Brand</th>
             <th>SKU Name</th>
+            <th>Category</th>
             <th className="sortable">
-              Original Price{' '}
-              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+              Original Price{' '}<SortIcon />
             </th>
             <th className="sortable">
-              Selling Price{' '}
-              <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+              Selling Price{' '}<SortIcon />
             </th>
-            <th>Avg PSP</th>
-            <th>PPP Price</th>
+            <th><span className="th-with-info">Avg PSP <InfoIcon text="Average Selling Price — the average price at which this SKU has been sold in the past period." /></span></th>
+            <th><span className="th-with-info">PPP Price <InfoIcon text="Personal Price Program price — the personalised discounted price offered to eligible customers based on their purchase history." /></span></th>
             <th>Cost Bearer</th>
-            <th>Category Discount Rate</th>
-            <th>SKU Participation Status</th>
+            <th style={{ maxWidth: '80px', whiteSpace: 'normal', lineHeight: '1.3' }}>Category<br/>Discount Rate</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -98,6 +137,7 @@ export default function SkuTable({ rows, checkedIds, onToggleRow, onToggleAll, l
                 <td style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 400 }}>{sku.id}</td>
                 <td>{sku.brand}</td>
                 <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sku.name}</td>
+                <td style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{sku.cat}</td>
                 <td><span className="price-orig">HKD {sku.origPrice}</span></td>
                 <td><span className="price-sell">HKD {sku.sellPrice}</span></td>
                 <td><span className="price-psp">HKD {sku.avgPsp}</span></td>
@@ -105,8 +145,8 @@ export default function SkuTable({ rows, checkedIds, onToggleRow, onToggleAll, l
                 <td><span className="cost-bearer">Merchant</span></td>
                 <td><span className="discount-rate">{sku.discRate}</span></td>
                 <td>
-                  <span className={`badge ${partCfg.cls}`}>
-                    <span className="badge-dot"></span>{partCfg.label}
+                  <span className="dot-tag">
+                    <span className="dot-tag-dot" style={{ background: partCfg.dotColor }} />{partCfg.label}
                   </span>
                 </td>
               </tr>

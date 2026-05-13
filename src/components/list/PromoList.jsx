@@ -10,6 +10,7 @@ export default function PromoList({
   onSearchTypeChange, onSearchQueryChange, onStatusFilterChange,
   onDateStartChange, onDateEndChange, onClearFilters,
   onEnroll, onViewDetail, joinedIds = new Set(), onPreview, onExitProgram,
+  v4SubPage = 'program-cycles',
 }) {
   const [selectedId,       setSelectedId]       = useState(() => promotions[0]?.id ?? null);
   const [exitedIds,        setExitedIds]        = useState(() => new Set());
@@ -67,20 +68,27 @@ export default function PromoList({
   );
 
   const table = (
-    <PromoTable rows={filtered} onEnroll={onEnroll} onPreview={onPreview} selectedId={selectedId} onRowClick={handleRowClick} />
+    <PromoTable rows={filtered} onEnroll={onEnroll} onPreview={onPreview} selectedId={selectedId} onRowClick={handleRowClick} version={version} />
   );
 
   const pagination = <PaginationBar filtered={filtered} total={total} />;
 
-  if (showStoreDetail) {
-    return <StoreStatusDetail onBack={() => setShowStoreDetail(false)} />;
+  if (showStoreDetail || (version === 'v4' && v4SubPage === 'program-settings')) {
+    return (
+      <StoreStatusDetail
+        onBack={() => setShowStoreDetail(false)}
+        version={version}
+        promotions={promotions}
+        onEnroll={onEnroll}
+      />
+    );
   }
 
   return (
     <div className="view active" id="view-list">
       <nav className="breadcrumb">
-        <a>Home</a><span className="breadcrumb-sep">›</span>
-        <a>Promotion Management</a><span className="breadcrumb-sep">›</span>
+        <a>Home</a><span className="breadcrumb-sep">/</span>
+        <a>Promotion Management</a><span className="breadcrumb-sep">/</span>
         <span className="breadcrumb-current">Personal Price Promotion</span>
       </nav>
 
@@ -111,6 +119,13 @@ export default function PromoList({
             <div className="card">{toolbar}{table}{pagination}</div>
           </div>
         </>
+      )}
+
+      {/* v4 — Program Cycles sub-page (nav lives in sidebar; Program Settings is an early return above) */}
+      {version === 'v4' && v4SubPage === 'program-cycles' && (
+        <div className="promo-list-body">
+          <div className="card">{toolbar}{table}{pagination}</div>
+        </div>
       )}
 
       {/* v3 — status dashboard + program cycles table */}

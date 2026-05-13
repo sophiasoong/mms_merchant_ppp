@@ -9,11 +9,11 @@ import TcModal from './components/modals/TcModal.jsx';
 import ConfirmDialog from './components/modals/ConfirmDialog.jsx';
 import AuditModal from './components/modals/AuditModal.jsx';
 import UploadModal from './components/modals/UploadModal.jsx';
-import { PROMOTIONS_INITIAL } from './data/promotions.js';
+import { PROMOTIONS_INITIAL, STORE_STATUS_DATA } from './data/promotions.js';
 import { SKU_ROWS_INITIAL } from './data/skus.js';
 
 // Generate merchant's own storefront code once per session
-const MERCHANT_CODE = 'H' + String(Math.floor(Math.random() * 9000000) + 1000000);
+const MERCHANT_CODE = 'H2748138';
 
 export default function App() {
   // ── View state ──────────────────────────────────────────────
@@ -48,6 +48,12 @@ export default function App() {
 
   // ── Version tab state ────────────────────────────────────────
   const [version, setVersion] = useState('v1');
+
+  // ── v4 sub-page (lifted so Sidebar can drive it) ─────────────
+  const [v4SubPage, setV4SubPage] = useState('program-cycles');
+
+  // ── Sidebar open/closed ──────────────────────────────────────
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // ── SKU filter state ─────────────────────────────────────────
   const [skuSearch, setSkuSearch] = useState('');
@@ -113,6 +119,32 @@ export default function App() {
     window.scrollTo(0, 0);
   }, []);
 
+  // ── Auto-open T&C on first visit to Program Cycles ──────────
+  const [tcShowStores, setTcShowStores] = useState(false);
+
+  // v1/v2/v3: once per session on mount
+  useEffect(() => {
+    if (sessionStorage.getItem('ppp_tc_shown')) return;
+    const promo = PROMOTIONS_INITIAL[0];
+    if (!promo) return;
+    sessionStorage.setItem('ppp_tc_shown', '1');
+    setTcPromo(promo);
+    setTcReadOnly(false);
+    setTcShowStores(true);
+    setTcModalOpen(true);
+  }, []);
+
+  // v4: every time Program Cycles page becomes active (once per v4 session switch)
+  useEffect(() => {
+    if (version !== 'v4' || v4SubPage !== 'program-cycles') return;
+    const promo = PROMOTIONS_INITIAL[0];
+    if (!promo) return;
+    setTcPromo(promo);
+    setTcReadOnly(false);
+    setTcShowStores(true);
+    setTcModalOpen(true);
+  }, [version, v4SubPage]);
+
   // ── Enroll: open T&C modal ───────────────────────────────────
   const handleEnroll = useCallback((promoId) => {
     const promo = promotions.find(p => p.id === promoId);
@@ -141,6 +173,7 @@ export default function App() {
   const handleJoinPPP = useCallback((promo) => {
     setTcModalOpen(false);
     setTcPromo(null);
+    setTcShowStores(false);
     setJoinedIds(prev => new Set([...prev, promo.id]));
     const updated = promotions.map(p =>
       p.id === promo.id ? { ...p, status: 'pending_confirm' } : p
@@ -224,9 +257,9 @@ export default function App() {
 
   return (
     <>
-      <Topbar version={version} onVersionChange={setVersion} />
-      <div className="shell">
-        <Sidebar />
+      <Topbar version={version} onVersionChange={setVersion} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(o => !o)} />
+      <div className={`shell${sidebarOpen ? '' : ' sidebar-closed'}`}>
+        <Sidebar open={sidebarOpen} version={version} v4SubPage={v4SubPage} onV4SubPageChange={setV4SubPage} onNavigateToList={showList} />
         <main className="main">
           {view === 'list' ? (
             <PromoList
@@ -248,6 +281,7 @@ export default function App() {
               onPreview={handlePreview}
               onExitProgram={handleExitProgram}
               version={version}
+              v4SubPage={v4SubPage}
             />
           ) : (
             <SkuPreview
@@ -266,6 +300,7 @@ export default function App() {
               onAuditHistory={() => setAuditModalOpen(true)}
               onSaveAsDraft={handleSaveAsDraft}
               draftToastVisible={draftToastVisible}
+              onDismissToast={() => setDraftToastVisible(false)}
             />
           )}
         </main>
@@ -287,8 +322,10 @@ export default function App() {
         open={tcModalOpen}
         promo={tcPromo}
         storefrontCode={MERCHANT_CODE}
+        storefrontCodes={STORE_STATUS_DATA.filter(r => r.status === 'open').map(r => r.storefrontCode)}
         readOnly={tcReadOnly}
-        onClose={() => { setTcModalOpen(false); setTcPromo(null); setTcReadOnly(false); }}
+        showStoreSelection={tcShowStores}
+        onClose={() => { setTcModalOpen(false); setTcPromo(null); setTcReadOnly(false); setTcShowStores(false); }}
         onJoin={handleJoinPPP}
       />
       <ConfirmDialog

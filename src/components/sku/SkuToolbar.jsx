@@ -1,94 +1,133 @@
 import { useState, useEffect, useRef } from 'react';
-import { SKU_ROWS_INITIAL } from '../../data/skus.js';
+import { SKU_ROWS_INITIAL, CAT_CODES, SKU_PART_CONFIG } from '../../data/skus.js';
 
 const ALL_CATS = [...new Set(SKU_ROWS_INITIAL.map(s => s.cat))];
+const ALL_STATUSES = Object.keys(SKU_PART_CONFIG); // ['under_review', 'locked', 'excluded']
 
-export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChange, onCategoryChange, resultCount, version = 'v1', onBatchUpload }) {
+function ChevronDown({ size = 16 }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+}
+
+export default function SkuToolbar({ skuSearch, categoryFilter, statusFilter = [], onSkuSearchChange, onCategoryChange, onStatusChange, resultCount, version = 'v1', onBatchUpload }) {
   const [catDropOpen, setCatDropOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  // pending: explicit set of checked cats (always full list when "all selected")
+  const [catSearch, setCatSearch] = useState('');
   const [pending, setPending] = useState(ALL_CATS);
-  const dropRef = useRef(null);
+  const chipRef = useRef(null);
+
+  // Status filter state
+  const [statusDropOpen, setStatusDropOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(ALL_STATUSES);
+  const statusChipRef = useRef(null);
 
   function openDrop() {
-    // initialise from current filter: [] means all
     setPending(categoryFilter.length === 0 ? ALL_CATS : [...categoryFilter]);
-    setSearch('');
+    setCatSearch('');
     setCatDropOpen(true);
   }
 
   useEffect(() => {
     if (!catDropOpen) return;
     function handleClick(e) {
-      if (dropRef.current && !dropRef.current.contains(e.target)) setCatDropOpen(false);
+      if (chipRef.current && !chipRef.current.contains(e.target)) setCatDropOpen(false);
     }
     setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [catDropOpen]);
 
-  const filteredCats = ALL_CATS.filter(c => c.toLowerCase().includes(search.toLowerCase()));
+  function openStatusDrop() {
+    setPendingStatus(statusFilter.length === 0 ? ALL_STATUSES : [...statusFilter]);
+    setStatusDropOpen(true);
+  }
 
-  const allChecked = pending.length === ALL_CATS.length;
+  useEffect(() => {
+    if (!statusDropOpen) return;
+    function handleClick(e) {
+      if (statusChipRef.current && !statusChipRef.current.contains(e.target)) setStatusDropOpen(false);
+    }
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [statusDropOpen]);
+
+  function toggleStatus(s) {
+    setPendingStatus(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  }
+  function handleStatusApply() {
+    onStatusChange(pendingStatus.length === ALL_STATUSES.length ? [] : pendingStatus);
+    setStatusDropOpen(false);
+  }
+  function handleStatusClear() { setPendingStatus([]); }
+
+  const statusActiveCount = statusFilter.length;
+  const statusLabel = statusActiveCount > 0 ? `Status (${statusActiveCount})` : 'Status';
+  const isStatusActive = statusActiveCount > 0;
+
+  const filteredCats = ALL_CATS.filter(c => c.toLowerCase().includes(catSearch.toLowerCase()));
+  const allChecked  = pending.length === ALL_CATS.length;
   const someChecked = pending.length > 0 && pending.length < ALL_CATS.length;
 
   function toggleCat(cat) {
-    setPending(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    );
+    setPending(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   }
-
-  function handleSelectAll(e) {
-    setPending(e.target.checked ? ALL_CATS : []);
-  }
-
+  function handleSelectAll(e) { setPending(e.target.checked ? ALL_CATS : []); }
   function handleApply() {
-    // empty array = no filter (all), otherwise pass selected cats
     onCategoryChange(pending.length === ALL_CATS.length ? [] : pending);
     setCatDropOpen(false);
   }
-
-  function handleClear() {
-    setPending([]);
-  }
+  function handleClear() { setPending([]); }
 
   const activeCount = categoryFilter.length;
-  const catLabel = activeCount > 0 ? `Category (${activeCount})` : 'Category';
-  const isActive = activeCount > 0;
+  const catLabel    = activeCount > 0 ? `Category (${activeCount})` : 'Category';
+  const isActive    = activeCount > 0;
 
   return (
     <div className="table-toolbar">
-      <div className="search-input-wrap">
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+
+      {/* Search bar — matches PromoToolbar search-combo style */}
+      <div className="search-combo" style={{ minWidth: 280 }}>
         <input
           type="text"
           placeholder="Search SKU Name or SKU ID…"
           value={skuSearch}
           onChange={e => onSkuSearchChange(e.target.value)}
+          style={{ paddingLeft: 12 }}
         />
+        <button className="search-combo-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
       </div>
 
+      {/* Category filter — pill chip matching PromoToolbar */}
       <div
-        className={`filter-select${isActive ? ' active' : ''}`}
-        ref={dropRef}
+        ref={chipRef}
         onClick={() => !catDropOpen && openDrop()}
+        className={`filter-chip${isActive ? ' active' : ''}`}
         style={{ position: 'relative' }}
       >
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         <span>{catLabel}</span>
-        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <ChevronDown size={16} />
 
         {catDropOpen && (
           <div className="cat-dropdown" onClick={e => e.stopPropagation()}>
             {/* Search */}
             <div className="cat-dropdown-search">
-              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input
-                autoFocus
-                type="text"
-                placeholder="Search in filters"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
+              <div className="cat-dropdown-search-wrap">
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search in filters"
+                  value={catSearch}
+                  onChange={e => setCatSearch(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Select all */}
@@ -114,6 +153,7 @@ export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChang
                       checked={pending.includes(cat)}
                       onChange={() => toggleCat(cat)}
                     />
+                    {CAT_CODES[cat] && <span className="cat-code">{CAT_CODES[cat]}</span>}
                     {cat}
                   </label>
                 </div>
@@ -129,7 +169,47 @@ export default function SkuToolbar({ skuSearch, categoryFilter, onSkuSearchChang
         )}
       </div>
 
-      <div className="toolbar-spacer"></div>
+      {/* Status filter chip */}
+      <div
+        ref={statusChipRef}
+        onClick={() => !statusDropOpen && openStatusDrop()}
+        className={`filter-chip${isStatusActive ? ' active' : ''}`}
+        style={{ position: 'relative' }}
+      >
+        <span>{statusLabel}</span>
+        <ChevronDown size={16} />
+
+        {statusDropOpen && (
+          <div className="cat-dropdown" style={{ minWidth: 180 }} onClick={e => e.stopPropagation()}>
+            <div className="cat-dropdown-list" style={{ maxHeight: 'none' }}>
+              {ALL_STATUSES.map(s => {
+                const cfg = SKU_PART_CONFIG[s];
+                return (
+                  <div key={s} className="cat-dropdown-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={pendingStatus.includes(s)}
+                        onChange={() => toggleStatus(s)}
+                      />
+                      <span className="dot-tag" style={{ marginLeft: 4 }}>
+                        <span className="dot-tag-dot" style={{ background: cfg.dotColor }} />
+                        {cfg.label}
+                      </span>
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="cat-dropdown-footer">
+              <button className="cat-dropdown-clear" onClick={handleStatusClear}>Clear All</button>
+              <button className="cat-dropdown-apply" onClick={handleStatusApply}>Apply</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="toolbar-spacer" />
       <span className="result-count">{resultCount} result{resultCount !== 1 ? 's' : ''}</span>
       {version === 'v3' && onBatchUpload && (
         <button className="btn-export" onClick={onBatchUpload}>Upload</button>

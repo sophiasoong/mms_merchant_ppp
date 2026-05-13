@@ -1,5 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { STATUS_DROPDOWN_OPTS, SEARCH_TYPE_OPTS } from '../../data/promotions.js';
+import DateRangePicker from '../common/DateRangePicker.jsx';
+
+// Chevron down icon
+function ChevronDown({ size = 16 }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+}
 
 export default function PromoToolbar({
   searchType, searchQuery, statusFilter, dateStartFilter, dateEndFilter,
@@ -9,37 +19,41 @@ export default function PromoToolbar({
 }) {
   const [typeDropOpen, setTypeDropOpen] = useState(false);
   const [statusDropOpen, setStatusDropOpen] = useState(false);
-  const typeBtnRef = useRef(null);
-  const statusBtnRef = useRef(null);
+  const [dateDropOpen, setDateDropOpen] = useState(false);
+
+  const typeRef   = useRef(null);
+  const statusRef = useRef(null);
+  const dateRef   = useRef(null);
   const dateStartRef = useRef(null);
-  const dateEndRef = useRef(null);
+  const dateEndRef   = useRef(null);
 
-  function openPicker(ref) {
-    if (!ref.current) return;
-    ref.current.focus();
-    try { ref.current.showPicker(); } catch (_) {}
-  }
-
-  const hasFilters = searchQuery.trim() || statusFilter || dateStartFilter.trim() || dateEndFilter.trim();
-  const currentTypeOpt = SEARCH_TYPE_OPTS.find(o => o.value === searchType) || SEARCH_TYPE_OPTS[0];
-  const currentStatusOpt = STATUS_DROPDOWN_OPTS.find(o => o.value === statusFilter) || STATUS_DROPDOWN_OPTS[0];
-
-  // Close dropdowns on outside click
+  // Close all dropdowns on outside click
+  // Date picker renders in a portal so we check by class name too
   useEffect(() => {
-    if (!typeDropOpen && !statusDropOpen) return;
+    if (!typeDropOpen && !statusDropOpen && !dateDropOpen) return;
     function handleClick(e) {
-      if (typeDropOpen && typeBtnRef.current && !typeBtnRef.current.closest('.search-combo').contains(e.target)) {
-        setTypeDropOpen(false);
-      }
-      if (statusDropOpen && statusBtnRef.current && !statusBtnRef.current.contains(e.target)) {
-        setStatusDropOpen(false);
+      if (typeDropOpen   && typeRef.current   && !typeRef.current.contains(e.target))   setTypeDropOpen(false);
+      if (statusDropOpen && statusRef.current && !statusRef.current.contains(e.target)) setStatusDropOpen(false);
+      if (dateDropOpen   && dateRef.current   && !dateRef.current.contains(e.target)) {
+        // Also allow clicks inside the portal calendar (rendered in body)
+        const inPortal = e.target.closest('[data-date-picker]');
+        if (!inPortal) setDateDropOpen(false);
       }
     }
-    setTimeout(() => document.addEventListener('click', handleClick), 0);
-    return () => document.removeEventListener('click', handleClick);
-  }, [typeDropOpen, statusDropOpen]);
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [typeDropOpen, statusDropOpen, dateDropOpen]);
 
-  const placeholder = `Search ${currentTypeOpt.label}…`;
+  const hasFilters = searchQuery.trim() || statusFilter || dateStartFilter.trim() || dateEndFilter.trim();
+  const currentTypeOpt   = SEARCH_TYPE_OPTS.find(o => o.value === searchType)   || SEARCH_TYPE_OPTS[0];
+  const currentStatusOpt = STATUS_DROPDOWN_OPTS.find(o => o.value === statusFilter) || STATUS_DROPDOWN_OPTS[0];
+
+  const placeholder = `Search ${currentTypeOpt.label}`;
+
+  // Date chip label
+  const dateLabel = (dateStartFilter || dateEndFilter)
+    ? [dateStartFilter, dateEndFilter].filter(Boolean).join(' – ')
+    : 'Promotion Date';
 
   let resultText;
   if (resultCount === 0) {
@@ -52,22 +66,23 @@ export default function PromoToolbar({
 
   return (
     <div className="table-toolbar">
-      {/* Combined search */}
+
+      {/* Search bar — split addon + input */}
       <div className="search-combo">
         <div
           className="search-combo-type"
-          ref={typeBtnRef}
+          ref={typeRef}
           onClick={() => setTypeDropOpen(p => !p)}
-          style={{ position: 'relative' }}
         >
           <span>{currentTypeOpt.label}</span>
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          <ChevronDown size={12} />
 
           {typeDropOpen && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 999,
-              background: '#fff', border: '1px solid #D4D4D4', borderRadius: '8px',
-              boxShadow: '0 4px 16px rgba(0,0,0,.12)', minWidth: '180px', padding: '4px 0', fontSize: '13px',
+              background: '#fff', border: 'none', borderRadius: '8px',
+              boxShadow: '0px 2px 8px 0px #D9D9D9',
+              width: '152px', padding: '4px 0', fontSize: '14px',
             }}>
               {SEARCH_TYPE_OPTS.map(opt => {
                 const isActive = opt.value === searchType;
@@ -76,13 +91,14 @@ export default function PromoToolbar({
                     key={opt.value}
                     onClick={(e) => { e.stopPropagation(); onSearchTypeChange(opt.value); setTypeDropOpen(false); }}
                     style={{
-                      padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                      background: isActive ? '#ECEAFD' : 'transparent',
-                      color: isActive ? '#5244EE' : '#222',
-                      fontWeight: isActive ? '600' : '400',
+                      height: 32, padding: '4px 12px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center',
+                      background: isActive ? '#F1ECFF' : '#fff',
+                      color:      isActive ? '#110964' : '#1E1E1E',
+                      fontWeight: isActive ? 500 : 400,
                     }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F5F5F5'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F7F6FF'; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '#fff'; }}
                   >
                     {opt.label}
                   </div>
@@ -91,68 +107,103 @@ export default function PromoToolbar({
             </div>
           )}
         </div>
+
         <input
           type="text"
           placeholder={placeholder}
           value={searchQuery}
           onChange={e => onSearchQueryChange(e.target.value)}
         />
-        <button className="search-combo-btn" onClick={() => {}}>
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+
+        <button className="search-combo-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
         </button>
       </div>
 
-      {/* Date filters */}
-      <div className="date-filter-wrap">
-        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
-          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <div className="date-filter-picker-wrap" onClick={() => openPicker(dateStartRef)}>
-          <input
-            ref={dateStartRef}
-            className={`date-filter-input date-filter-picker${!dateStartFilter ? ' date-filter-empty' : ''}`}
-            type="date"
-            value={dateStartFilter}
-            onChange={e => onDateStartChange(e.target.value)}
+      {/* Promotion Date chip */}
+      <div
+        ref={dateRef}
+        onClick={() => setDateDropOpen(p => !p)}
+        style={{
+          position: 'relative',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          height: 32, padding: '0 8px 0 16px',
+          borderRadius: 32, cursor: 'pointer', userSelect: 'none',
+          fontFamily: 'Roboto, sans-serif', fontSize: 14, whiteSpace: 'nowrap',
+          // DS states: selected=darker bg+primary border; focus=primary border+shadow; default=light
+          background: (dateStartFilter || dateEndFilter) ? '#D4D0FB' : '#F7F6FF',
+          border: `1px solid ${dateDropOpen ? '#5244EE' : (dateStartFilter || dateEndFilter) ? '#5244EE' : '#D4D0FB'}`,
+          color: '#5244EE',
+          boxShadow: dateDropOpen ? '0 0 0 2px rgba(82,68,238,.15)' : 'none',
+          transition: 'border-color .15s, box-shadow .15s',
+        }}
+      >
+        {/* When dates selected: show inline "Promotion Date: start – end" */}
+        {(dateStartFilter || dateEndFilter) ? (
+          <>
+            <span style={{ color: '#5244EE' }}>Promotion Date:&nbsp;</span>
+            <span style={{
+              color: '#5244EE',
+              borderBottom: dateDropOpen ? '1px solid #5244EE' : 'none',
+              lineHeight: '1',
+            }}>
+              {dateStartFilter || '—'}
+            </span>
+            <svg width="10" height="10" fill="none" stroke="#5244EE" strokeWidth="2" viewBox="0 0 24 24" style={{flexShrink:0}}>
+              <path d="M7 17L17 7M17 7H7M17 7v10"/>
+            </svg>
+            <span style={{
+              color: '#5244EE',
+              borderBottom: dateDropOpen ? '1px solid #5244EE' : 'none',
+              lineHeight: '1',
+            }}>
+              {dateEndFilter || '—'}
+            </span>
+            <ChevronDown size={16} />
+          </>
+        ) : (
+          <>
+            <span>Promotion Date</span>
+            <ChevronDown size={16} />
+          </>
+        )}
+
+        {dateDropOpen && (
+          <DateRangePicker
+            anchorRect={dateRef.current?.getBoundingClientRect()}
+            startDate={dateStartFilter}
+            endDate={dateEndFilter}
+            onStartChange={onDateStartChange}
+            onEndChange={onDateEndChange}
+            onClose={() => setDateDropOpen(false)}
+
           />
-          {!dateStartFilter && <span className="date-filter-placeholder">Start Date</span>}
-        </div>
-        <span className="date-filter-sep">–</span>
-        <div className="date-filter-picker-wrap" onClick={() => openPicker(dateEndRef)}>
-          <input
-            ref={dateEndRef}
-            className={`date-filter-input date-filter-picker${!dateEndFilter ? ' date-filter-empty' : ''}`}
-            type="date"
-            value={dateEndFilter}
-            onChange={e => onDateEndChange(e.target.value)}
-          />
-          {!dateEndFilter && <span className="date-filter-placeholder">End Date</span>}
-        </div>
+        )}
       </div>
 
-      {/* Status filter */}
+      {/* Enrollment Status chip */}
       <div
-        className={`filter-select${statusFilter ? ' active' : ''}`}
-        ref={statusBtnRef}
+        className={`filter-chip${statusFilter ? ' active' : ''}`}
+        ref={statusRef}
         onClick={() => setStatusDropOpen(p => !p)}
-        style={{ position: 'relative' }}
       >
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         <span>{statusFilter ? currentStatusOpt.label : 'Enrollment Status'}</span>
-        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <ChevronDown size={16} />
 
         {statusDropOpen && (
           <div style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 999,
-            background: '#fff', border: '1px solid #D4D4D4', borderRadius: '6px',
-            boxShadow: '0 4px 16px rgba(0,0,0,.12)', minWidth: '188px', padding: '4px 0', fontSize: '13px',
-          }}>
+            position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 999,
+            background: '#fff', border: '1px solid #D4D4D4', borderRadius: '8px',
+            boxShadow: '0 4px 16px rgba(0,0,0,.12)', minWidth: '200px', padding: '4px 0', fontSize: '14px',
+          }} onClick={e => e.stopPropagation()}>
             {STATUS_DROPDOWN_OPTS.map(opt => {
               const isCurrent = opt.value === statusFilter;
               return (
                 <div
                   key={String(opt.value)}
-                  onClick={(e) => { e.stopPropagation(); onStatusFilterChange(opt.value); setStatusDropOpen(false); }}
+                  onClick={() => { onStatusFilterChange(opt.value); setStatusDropOpen(false); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '9px',
                     padding: '9px 14px', cursor: 'pointer',
@@ -180,15 +231,12 @@ export default function PromoToolbar({
         )}
       </div>
 
-      {/* Clear filters */}
+      {/* Clear All */}
       {hasFilters && (
-        <button className="btn-clear-filter" onClick={onClearFilters}>
-          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Clear All
-        </button>
+        <button className="btn-clear-filter" onClick={onClearFilters}>Clear All</button>
       )}
 
-      <div className="toolbar-spacer"></div>
+      <div className="toolbar-spacer" />
       <span className="result-count">{resultText}</span>
     </div>
   );

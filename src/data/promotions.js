@@ -31,11 +31,11 @@ export const PROMOTIONS_INITIAL = [
 ];
 
 export const STATUS_CONFIG = {
-  open:            { label: "Open",           cls: "badge-open" },
-  pending_confirm: { label: "Pending Confirm", cls: "badge-pending" },
-  confirmed:       { label: "Confirmed",       cls: "badge-confirmed" },
-  opted_out:       { label: "Opted Out",       cls: "badge-opted-out" },
-  exit_scheduled:  { label: "Exit Scheduled",  cls: "badge-exit" },
+  open:            { label: "Open",           cls: "badge-open",     dotColor: "#1890FF" },
+  pending_confirm: { label: "Pending Confirm", cls: "badge-pending",  dotColor: "#FA8C16" },
+  confirmed:       { label: "Confirmed",       cls: "badge-confirmed",dotColor: "#52C41A" },
+  opted_out:       { label: "Opted Out",       cls: "badge-opted-out",dotColor: "#F5222D" },
+  exit_scheduled:  { label: "Exit Scheduled",  cls: "badge-exit",     dotColor: "#531DAB" },
 };
 
 export const STATUS_DROPDOWN_OPTS = [
@@ -51,9 +51,9 @@ export const SEARCH_TYPE_OPTS = [
 
 export const AUDIT_DATA = {
   default: [
-    { action: 'Confirm',        date: '2026-04-01 09:15', userId: 'MER88021' },
-    { action: 'Manual Exclude', date: '2026-03-20 14:32', userId: 'ADMIN001' },
-    { action: 'Batch Upload',   date: '2026-03-10 11:05', userId: 'MER88021' },
+    { action: 'Confirm',        date: '2026-04-01 09:15', userId: 'merchant@hktv.com.hk' },
+    { action: 'Manual Exclude', date: '2026-03-20 14:32', userId: 'admin@hktv.com.hk' },
+    { action: 'Batch Upload',   date: '2026-03-10 11:05', userId: 'merchant@hktv.com.hk' },
   ],
 };
 
@@ -64,10 +64,7 @@ export const STORE_STATUS_DATA = [
   { storefrontCode: 'H4981529', status: 'open',           action: 'exit' },
   { storefrontCode: 'H5413880', status: 'open',           action: 'exit', showInfo: true },
   { storefrontCode: 'H6234571', status: 'exit_scheduled' },
-  { storefrontCode: 'H7823456', status: 'exit_scheduled' },
-  { storefrontCode: 'H8912345', status: 'exit_scheduled' },
   { storefrontCode: 'H9001234', status: 'opted_out' },
-  { storefrontCode: 'H1123456', status: 'opted_out' },
 ];
 
 export const DIALOG_CONFIG = {

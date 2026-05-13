@@ -11,7 +11,7 @@ export default function AuditModal({ open, promo, onClose }) {
       <div className="dialog-box" style={{ maxWidth: 560, width: '100%' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <span className="dialog-title" style={{ marginBottom: 0 }}>Audit History</span>
+          <span className="dialog-title" style={{ marginBottom: 0 }}>Log Detail</span>
           <button
             onClick={onClose}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}
@@ -23,12 +23,12 @@ export default function AuditModal({ open, promo, onClose }) {
         </div>
 
         {/* Table */}
-        <div className="promo-panel-audit-table" style={{ fontSize: 14 }}>
-          <div className="promo-panel-audit-head" style={{ fontSize: 13, padding: '10px 16px' }}>
+        <div className="promo-panel-audit-table">
+          <div className="promo-panel-audit-head">
             <span>Action</span><span>DateTime</span><span>User ID</span>
           </div>
           {rows.map((entry, i) => (
-            <div key={i} className="promo-panel-audit-row" style={{ fontSize: 14, padding: '14px 16px' }}>
+            <div key={i} className="promo-panel-audit-row">
               <span>{entry.action}</span>
               <span>{entry.date}</span>
               <span>{entry.userId}</span>
