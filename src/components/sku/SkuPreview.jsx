@@ -7,7 +7,7 @@ export default function SkuPreview({
   promo, skuRows,
   skuSearch, categoryFilter,
   viewMode = 'edit', version = 'v1',
-  onSkuSearchChange, onCategoryChange,
+  onSkuSearchChange, onCategoryChange, onSkuSearchTypeChange,
   onShowList,
   onOpenConfirmDialog, onOpenOptOutDialog,
   onBatchUpload, onAuditHistory,
@@ -20,6 +20,12 @@ export default function SkuPreview({
   const bannerRowRef = useRef(null);
   const toastTop = 84; // 68px topbar + 16px gap
 
+  const [skuSearchType, setSkuSearchType] = useState('name');
+  function handleSkuSearchTypeChange(type) {
+    setSkuSearchType(type);
+    onSkuSearchTypeChange?.(type);
+  }
+
   // checkedIds: Set of checked SKU ids — all checked by default
   const [checkedIds, setCheckedIds] = useState(() => new Set(skuRows.map(s => s.id)));
 
@@ -28,12 +34,14 @@ export default function SkuPreview({
   const filteredRows = useMemo(() => {
     const q = skuSearch.trim().toLowerCase();
     return skuRows.filter(s => {
-      const matchQ = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q);
+      const matchQ = !q || (skuSearchType === 'id'
+        ? s.id.toLowerCase().includes(q)
+        : s.name.toLowerCase().includes(q));
       const matchCat = !categoryFilter || categoryFilter.length === 0 || categoryFilter.includes(s.cat);
       const matchStatus = statusFilter.length === 0 || statusFilter.includes(s.partStatus);
       return matchQ && matchCat && matchStatus;
     });
-  }, [skuRows, skuSearch, categoryFilter, statusFilter]);
+  }, [skuRows, skuSearch, skuSearchType, categoryFilter, statusFilter]);
 
   const PAGE_SIZE_OPTS = [20, 50, 100];
   const [pageSize, setPageSize] = useState(20);
@@ -120,7 +128,10 @@ export default function SkuPreview({
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span>Deselect SKU from the list to exclude them from the program cycle. You may deselect up to 10% of the total SKU list.</span>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span>Deselect SKU from the list to exclude them from the program cycle. You may deselect up to 10% of the total SKU list.</span>
+                  <span>PPP Price policy description...</span>
+                </span>
               </div>
             </div>
           )}
@@ -142,9 +153,11 @@ export default function SkuPreview({
 
             <SkuToolbar
               skuSearch={skuSearch}
+              skuSearchType={skuSearchType}
               categoryFilter={categoryFilter}
               statusFilter={statusFilter}
               onSkuSearchChange={onSkuSearchChange}
+              onSkuSearchTypeChange={handleSkuSearchTypeChange}
               onCategoryChange={onCategoryChange}
               onStatusChange={setStatusFilter}
               resultCount={filteredRows.length}

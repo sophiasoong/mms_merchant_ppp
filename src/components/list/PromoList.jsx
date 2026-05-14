@@ -12,9 +12,13 @@ export default function PromoList({
   onEnroll, onViewDetail, joinedIds = new Set(), onPreview, onExitProgram,
   v4SubPage = 'program-cycles',
 }) {
-  const [selectedId,       setSelectedId]       = useState(() => promotions[0]?.id ?? null);
-  const [exitedIds,        setExitedIds]        = useState(() => new Set());
-  const [showStoreDetail,  setShowStoreDetail]  = useState(false);
+  const [selectedId,         setSelectedId]         = useState(() => promotions[0]?.id ?? null);
+  const [exitedIds,          setExitedIds]          = useState(() => new Set());
+  const [showStoreDetail,    setShowStoreDetail]    = useState(false);
+  const [cycleSort,          setCycleSort]          = useState('current');
+  const [storefrontCodeFilter, setStorefrontCodeFilter] = useState([]);
+
+  const allStorefrontCodes = useMemo(() => [...new Set(promotions.map(p => p.storefrontCode))].sort(), [promotions]);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -30,9 +34,18 @@ export default function PromoList({
       const matchStatus = !statusFilter || row.status === statusFilter;
       const matchDateStart = !ds || row.start >= ds;
       const matchDateEnd   = !de || row.end <= de;
-      return matchSearch && matchStatus && matchDateStart && matchDateEnd;
+      const matchStorefront = storefrontCodeFilter.length === 0 || storefrontCodeFilter.includes(row.storefrontCode);
+      return matchSearch && matchStatus && matchDateStart && matchDateEnd && matchStorefront;
     });
-  }, [promotions, searchType, searchQuery, statusFilter, dateStartFilter, dateEndFilter]);
+  }, [promotions, searchType, searchQuery, statusFilter, dateStartFilter, dateEndFilter, storefrontCodeFilter]);
+
+  const sortedFiltered = useMemo(() => {
+    if (version === 'v4' && v4SubPage === 'program-cycles' && cycleSort === 'current')
+      return filtered.filter(r => r.start === '2026-04-01');
+    if (cycleSort === 'newest') return [...filtered].sort((a, b) => b.start.localeCompare(a.start));
+    if (cycleSort === 'oldest') return [...filtered].sort((a, b) => a.start.localeCompare(b.start));
+    return filtered;
+  }, [filtered, cycleSort, version, v4SubPage]);
 
   const total         = promotions.length;
   const selectedPromo = promotions.find(p => p.id === selectedId) ?? null;
@@ -63,15 +76,19 @@ export default function PromoList({
       onSearchTypeChange={onSearchTypeChange} onSearchQueryChange={onSearchQueryChange}
       onStatusFilterChange={onStatusFilterChange} onDateStartChange={onDateStartChange}
       onDateEndChange={onDateEndChange} onClearFilters={onClearFilters}
-      resultCount={filtered.length} totalCount={total}
+      resultCount={sortedFiltered.length} totalCount={total}
+      version={version} cycleSort={cycleSort} onCycleSortChange={setCycleSort}
+      storefrontCodes={allStorefrontCodes}
+      storefrontCodeFilter={storefrontCodeFilter}
+      onStorefrontCodeFilterChange={setStorefrontCodeFilter}
     />
   );
 
   const table = (
-    <PromoTable rows={filtered} onEnroll={onEnroll} onPreview={onPreview} selectedId={selectedId} onRowClick={handleRowClick} version={version} />
+    <PromoTable rows={sortedFiltered} onEnroll={onEnroll} onPreview={onPreview} selectedId={selectedId} onRowClick={handleRowClick} version={version} />
   );
 
-  const pagination = <PaginationBar filtered={filtered} total={total} />;
+  const pagination = <PaginationBar filtered={sortedFiltered} total={total} />;
 
   if (showStoreDetail || (version === 'v4' && v4SubPage === 'program-settings')) {
     return (

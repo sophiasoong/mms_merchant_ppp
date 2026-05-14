@@ -5,9 +5,9 @@ import { STORE_STATUS_DATA } from '../../data/promotions.js';
 const STATUS_MAP = {
   open:           { label: 'Open',           dotColor: '#1890FF' },
   enrolled:       { label: 'Enrolled',       dotColor: '#52C41A' },
-  exit_scheduled: { label: 'Exit Scheduled', dotColor: '#531DAB', info: 'Your exit request has been submitted and is pending approval. The exit will take effect from the start of the next PPP promotion period.' },
+  exit_scheduled: { label: 'Exit Scheduled', dotColor: '#531DAB', caption: 'Merchant', info: 'Exit effective from: 2026-05-01 (next cycle)' },
   exit_rejected:  { label: 'Exit Rejected',  dotColor: '#F5222D', info: 'Application to Exit Program is rejected. Please contact RM if you have any question.' },
-  opted_out:      { label: 'Opted Out',      dotColor: '#FA8C16', info: 'You have opted out of the PPP program. You will not participate in the next promotion cycle unless you re-enroll.' },
+  opted_out:      { label: 'Opted Out',      dotColor: '#FA8C16', caption: 'System',   info: 'You have opted out of the PPP program. You will not participate in the next promotion cycle unless you re-enroll.' },
 };
 
 // v3 overrides specific store statuses
@@ -40,16 +40,23 @@ function StatusInfoIcon({ text, danger = false }) {
 function StatusBadge({ status, showErrorInfo = false }) {
   const cfg = STATUS_MAP[status] || { label: status, dotColor: '#A6A6A6' };
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <span className="dot-tag">
-        <span className="dot-tag-dot" style={{ background: cfg.dotColor }} />
-        {cfg.label}
+    <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span className="dot-tag">
+          <span className="dot-tag-dot" style={{ background: cfg.dotColor }} />
+          {cfg.label}
+        </span>
+        {showErrorInfo && (
+          <StatusInfoIcon text="There is an issue with this storefront. Please contact RM for assistance." danger />
+        )}
+        {!showErrorInfo && cfg.info && (
+          <StatusInfoIcon text={cfg.info} danger={status === 'exit_rejected'} />
+        )}
       </span>
-      {showErrorInfo && (
-        <StatusInfoIcon text="There is an issue with this storefront. Please contact RM for assistance." danger />
-      )}
-      {!showErrorInfo && cfg.info && (
-        <StatusInfoIcon text={cfg.info} danger={status === 'exit_rejected'} />
+      {cfg.caption && (
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', paddingLeft: 14 }}>
+          {cfg.caption}
+        </span>
       )}
     </span>
   );
@@ -57,10 +64,15 @@ function StatusBadge({ status, showErrorInfo = false }) {
 
 export default function StoreStatusDetail({ onBack, version, promotions = [], onEnroll }) {
   const [auditStore, setAuditStore] = useState(null);
+  const [exitStore, setExitStore] = useState(null);
 
   function handleEnroll(storefrontCode) {
     const promo = promotions.find(p => p.storefrontCode === storefrontCode) ?? promotions[0];
     if (promo) onEnroll?.(promo.id);
+  }
+
+  function handleExitConfirm() {
+    setExitStore(null);
   }
 
   return (
@@ -106,6 +118,7 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
                         <button
                           className="ssd-ghost-btn ssd-ghost-btn--danger"
                           disabled={['exit_rejected', 'exit_scheduled', 'opted_out'].includes(row.status) || row.showInfo}
+                          onClick={() => setExitStore(row.storefrontCode)}
                         >
                           Exit
                         </button>
@@ -132,8 +145,8 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
           className="dialog-overlay open"
           onClick={e => { if (e.target === e.currentTarget) setAuditStore(null); }}
         >
-          <div className="dialog-box" style={{ maxWidth: 580 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div className="dialog-box" style={{ maxWidth: 580, maxHeight: 860, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexShrink: 0 }}>
               <span className="dialog-title" style={{ marginBottom: 0 }}>Log Detail — {auditStore}</span>
               <button onClick={() => setAuditStore(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center' }}>
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -141,14 +154,34 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
                 </svg>
               </button>
             </div>
-            <div className="promo-panel-audit-table">
-              <div className="promo-panel-audit-head">
+            <div className="promo-panel-audit-table" style={{ overflowY: 'auto', flex: 1 }}>
+              <div className="promo-panel-audit-head" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <span>Action</span><span>DateTime</span><span>User ID</span>
               </div>
               {[
                 { action: 'Opt Out',       date: '2026-04-01 09:15', userId: 'merchant@hktv.com.hk' },
                 { action: 'Admin Approve', date: '2026-03-20 14:32', userId: 'admin@hktv.com.hk'    },
                 { action: 'Exit Program',  date: '2026-03-10 11:05', userId: 'merchant@hktv.com.hk' },
+                { action: 'Enroll',        date: '2026-02-15 10:20', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Approve', date: '2026-02-10 09:45', userId: 'admin@hktv.com.hk'    },
+                { action: 'Opt Out',       date: '2026-01-28 16:33', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Reject',  date: '2026-01-20 11:12', userId: 'admin@hktv.com.hk'    },
+                { action: 'Exit Program',  date: '2026-01-10 14:55', userId: 'merchant@hktv.com.hk' },
+                { action: 'Enroll',        date: '2025-12-18 08:30', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Approve', date: '2025-12-05 15:22', userId: 'admin@hktv.com.hk'    },
+                { action: 'Opt Out',       date: '2025-11-29 13:10', userId: 'merchant@hktv.com.hk' },
+                { action: 'Enroll',        date: '2025-11-01 09:00', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Approve', date: '2025-10-22 17:48', userId: 'admin@hktv.com.hk'    },
+                { action: 'Admin Reject',  date: '2025-10-08 10:05', userId: 'admin@hktv.com.hk'    },
+                { action: 'Exit Program',  date: '2025-09-30 12:00', userId: 'merchant@hktv.com.hk' },
+                { action: 'Enroll',        date: '2025-09-01 08:15', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Approve', date: '2025-08-20 14:40', userId: 'admin@hktv.com.hk'    },
+                { action: 'Opt Out',       date: '2025-08-05 11:30', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Reject',  date: '2025-07-18 16:55', userId: 'admin@hktv.com.hk'    },
+                { action: 'Enroll',        date: '2025-07-01 09:20', userId: 'merchant@hktv.com.hk' },
+                { action: 'Exit Program',  date: '2025-06-25 13:45', userId: 'merchant@hktv.com.hk' },
+                { action: 'Admin Approve', date: '2025-06-10 10:30', userId: 'admin@hktv.com.hk'    },
+                { action: 'Enroll',        date: '2025-05-01 08:00', userId: 'merchant@hktv.com.hk' },
               ].map((entry, i) => (
                 <div key={i} className="promo-panel-audit-row">
                   <span>{entry.action}</span>
@@ -156,6 +189,58 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
                   <span>{entry.userId}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exit confirmation dialog */}
+      {exitStore && (
+        <div
+          className="dialog-overlay open"
+          onClick={e => { if (e.target === e.currentTarget) setExitStore(null); }}
+        >
+          <div style={{
+            background: '#fff',
+            borderRadius: 6,
+            boxShadow: '0px 2px 8px #D9D9D9',
+            padding: '32px 32px 24px',
+            width: 400,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}>
+            {/* Content */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 16, fontWeight: 500, color: 'rgba(0,0,0,0.87)', lineHeight: 1.2, margin: 0 }}>
+                Exit Program
+              </p>
+              <p style={{ fontSize: 14, fontWeight: 400, color: 'rgba(0,0,0,0.6)', lineHeight: 1.5, margin: 0 }}>
+                Are you sure you want to exit the PPP program for <strong>{exitStore}</strong>? Your exit request will take effect from the start of the next promotion period.
+              </p>
+            </div>
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setExitStore(null)}
+                style={{
+                  height: 32, padding: '0 16px', borderRadius: 6, cursor: 'pointer',
+                  background: '#fff', border: '1px solid #5244EE', color: '#5244EE',
+                  fontSize: 14, fontWeight: 400,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExitConfirm}
+                style={{
+                  height: 32, padding: '0 16px', borderRadius: 6, cursor: 'pointer',
+                  background: '#FF4D4F', border: 'none', color: '#fff',
+                  fontSize: 14, fontWeight: 400,
+                }}
+              >
+                Exit Program
+              </button>
             </div>
           </div>
         </div>

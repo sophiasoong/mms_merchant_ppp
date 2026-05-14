@@ -34,12 +34,13 @@ export default function PromoTable({ rows, onEnroll, onPreview, selectedId, onRo
           ) : (
             rows.map(row => {
               const cfg = STATUS_CONFIG[row.status];
+              const isCurrent = isV4 && row.start === '2026-04-01';
               return (
                 <tr
                   key={row.id}
                   className={selectedId === row.id ? 'row-selected' : ''}
                   onClick={() => onRowClick?.(row.id)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', background: isCurrent ? '#FFFBF2' : undefined }}
                 >
                   {/* Promotion ID — plain body text in black */}
                   <td style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 400 }}>{row.id}</td>

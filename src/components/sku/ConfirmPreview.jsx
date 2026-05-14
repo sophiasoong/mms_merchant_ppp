@@ -3,6 +3,7 @@ import { SKU_PART_CONFIG } from '../../data/skus.js';
 
 export default function ConfirmPreview({ open, promo, skuRows, checkedIds, onClose, onConfirm, onSaveAsDraft }) {
   const [activeTab, setActiveTab] = useState('included');
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
 
   // Reset tab when modal opens
   useEffect(() => {
@@ -68,9 +69,42 @@ export default function ConfirmPreview({ open, promo, skuRows, checkedIds, onClo
         <div className="confirm-modal-footer">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-save-draft" onClick={onSaveAsDraft}>Save as Draft</button>
-          <button className="btn-confirm-final" onClick={onConfirm}>Confirm</button>
+          <button className="btn-confirm-final" onClick={() => setShowConfirmAlert(true)}>Confirm</button>
         </div>
       </div>
+
+      {/* Confirm lock alert */}
+      {showConfirmAlert && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowConfirmAlert(false); }}
+        >
+          <div style={{ background: '#fff', borderRadius: 6, boxShadow: '0px 2px 8px #D9D9D9', padding: '32px 32px 24px', width: 400, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 16, fontWeight: 500, color: 'rgba(0,0,0,0.87)', lineHeight: 1.2, margin: 0 }}>
+                Confirm & Lock Prices
+              </p>
+              <p style={{ fontSize: 14, fontWeight: 400, color: 'rgba(0,0,0,0.6)', lineHeight: 1.5, margin: 0 }}>
+                By confirming you lock the avg listing prices and PPP prices for the PPP period {promo?.start} to {promo?.end}.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowConfirmAlert(false)}
+                style={{ height: 32, padding: '0 16px', borderRadius: 6, cursor: 'pointer', background: '#fff', border: '1px solid #5244EE', color: '#5244EE', fontSize: 14, fontWeight: 400 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowConfirmAlert(false); onConfirm(); }}
+                style={{ height: 32, padding: '0 16px', borderRadius: 6, cursor: 'pointer', background: '#5244EE', border: 'none', color: '#fff', fontSize: 14, fontWeight: 400 }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -100,8 +134,8 @@ function SkuTable({ rows, partStatus }) {
             <th>Avg PSP</th>
             <th>PPP Price</th>
             <th>Cost Bearer</th>
-            <th>Category Discount Rate</th>
-            <th>SKU Participation Status</th>
+            <th style={{ maxWidth: '80px', whiteSpace: 'normal', lineHeight: '1.3' }}>Category<br/>Discount Rate</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>

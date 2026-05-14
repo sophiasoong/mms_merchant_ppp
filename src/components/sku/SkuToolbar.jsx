@@ -12,7 +12,15 @@ function ChevronDown({ size = 16 }) {
   );
 }
 
-export default function SkuToolbar({ skuSearch, categoryFilter, statusFilter = [], onSkuSearchChange, onCategoryChange, onStatusChange, resultCount, version = 'v1', onBatchUpload }) {
+const SKU_SEARCH_TYPES = [
+  { value: 'name', label: 'SKU Name' },
+  { value: 'id',   label: 'SKU ID'   },
+];
+
+export default function SkuToolbar({ skuSearch, skuSearchType = 'name', categoryFilter, statusFilter = [], onSkuSearchChange, onSkuSearchTypeChange, onCategoryChange, onStatusChange, resultCount, version = 'v1', onBatchUpload }) {
+  const [typeDropOpen, setTypeDropOpen] = useState(false);
+  const typeRef = useRef(null);
+
   const [catDropOpen, setCatDropOpen] = useState(false);
   const [catSearch, setCatSearch] = useState('');
   const [pending, setPending] = useState(ALL_CATS);
@@ -22,6 +30,15 @@ export default function SkuToolbar({ skuSearch, categoryFilter, statusFilter = [
   const [statusDropOpen, setStatusDropOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(ALL_STATUSES);
   const statusChipRef = useRef(null);
+
+  useEffect(() => {
+    if (!typeDropOpen) return;
+    function handleClick(e) {
+      if (typeRef.current && !typeRef.current.contains(e.target)) setTypeDropOpen(false);
+    }
+    setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [typeDropOpen]);
 
   function openDrop() {
     setPending(categoryFilter.length === 0 ? ALL_CATS : [...categoryFilter]);
@@ -86,14 +103,52 @@ export default function SkuToolbar({ skuSearch, categoryFilter, statusFilter = [
   return (
     <div className="table-toolbar">
 
-      {/* Search bar — matches PromoToolbar search-combo style */}
-      <div className="search-combo" style={{ minWidth: 280 }}>
+      {/* Search bar */}
+      <div className="search-combo" style={{ minWidth: 416 }}>
+        <div
+          className="search-combo-type"
+          ref={typeRef}
+          onClick={() => setTypeDropOpen(p => !p)}
+        >
+          <span>{SKU_SEARCH_TYPES.find(o => o.value === skuSearchType)?.label}</span>
+          <ChevronDown size={12} />
+
+          {typeDropOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 999,
+              background: '#fff', border: 'none', borderRadius: '8px',
+              boxShadow: '0px 2px 8px 0px #D9D9D9',
+              width: '140px', padding: '4px 0', fontSize: '14px',
+            }}>
+              {SKU_SEARCH_TYPES.map(opt => {
+                const isActive = opt.value === skuSearchType;
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={e => { e.stopPropagation(); onSkuSearchTypeChange?.(opt.value); setTypeDropOpen(false); }}
+                    style={{
+                      height: 32, padding: '4px 12px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center',
+                      background: isActive ? '#F1ECFF' : '#fff',
+                      color:      isActive ? '#110964' : '#1E1E1E',
+                      fontWeight: isActive ? 500 : 400,
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#F7F6FF'; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '#fff'; }}
+                  >
+                    {opt.label}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         <input
           type="text"
-          placeholder="Search SKU Name or SKU ID…"
+          placeholder={`Search ${SKU_SEARCH_TYPES.find(o => o.value === skuSearchType)?.label}…`}
           value={skuSearch}
           onChange={e => onSkuSearchChange(e.target.value)}
-          style={{ paddingLeft: 12 }}
         />
         <button className="search-combo-btn">
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

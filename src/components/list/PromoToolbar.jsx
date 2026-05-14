@@ -11,38 +11,62 @@ function ChevronDown({ size = 16 }) {
   );
 }
 
+const CYCLE_OPTS = [
+  { value: 'current', label: 'Current cycles' },
+  { value: 'newest',  label: 'From newest to oldest' },
+  { value: 'oldest',  label: 'From oldest to newest' },
+];
+
 export default function PromoToolbar({
   searchType, searchQuery, statusFilter, dateStartFilter, dateEndFilter,
   onSearchTypeChange, onSearchQueryChange, onStatusFilterChange,
   onDateStartChange, onDateEndChange, onClearFilters,
   resultCount, totalCount,
+  version, cycleSort = 'current', onCycleSortChange,
+  storefrontCodes = [], storefrontCodeFilter = [], onStorefrontCodeFilterChange,
 }) {
   const [typeDropOpen, setTypeDropOpen] = useState(false);
   const [statusDropOpen, setStatusDropOpen] = useState(false);
   const [dateDropOpen, setDateDropOpen] = useState(false);
+  const [cycleDropOpen, setCycleDropOpen] = useState(false);
+  const [sfDropOpen, setSfDropOpen] = useState(false);
+  const [sfPending, setSfPending] = useState([]);
+  const [sfSearch, setSfSearch] = useState('');
 
   const typeRef   = useRef(null);
   const statusRef = useRef(null);
   const dateRef   = useRef(null);
+  const cycleRef  = useRef(null);
+  const sfRef     = useRef(null);
   const dateStartRef = useRef(null);
   const dateEndRef   = useRef(null);
 
   // Close all dropdowns on outside click
   // Date picker renders in a portal so we check by class name too
   useEffect(() => {
-    if (!typeDropOpen && !statusDropOpen && !dateDropOpen) return;
+    if (!typeDropOpen && !statusDropOpen && !dateDropOpen && !cycleDropOpen && !sfDropOpen) return;
     function handleClick(e) {
       if (typeDropOpen   && typeRef.current   && !typeRef.current.contains(e.target))   setTypeDropOpen(false);
       if (statusDropOpen && statusRef.current && !statusRef.current.contains(e.target)) setStatusDropOpen(false);
+      if (cycleDropOpen  && cycleRef.current  && !cycleRef.current.contains(e.target))  setCycleDropOpen(false);
+      if (sfDropOpen     && sfRef.current     && !sfRef.current.contains(e.target))     setSfDropOpen(false);
       if (dateDropOpen   && dateRef.current   && !dateRef.current.contains(e.target)) {
-        // Also allow clicks inside the portal calendar (rendered in body)
         const inPortal = e.target.closest('[data-date-picker]');
         if (!inPortal) setDateDropOpen(false);
       }
     }
     setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [typeDropOpen, statusDropOpen, dateDropOpen]);
+  }, [typeDropOpen, statusDropOpen, dateDropOpen, cycleDropOpen, sfDropOpen]);
+
+  function openSfDrop() {
+    setSfPending(storefrontCodeFilter.length === 0 ? [...storefrontCodes] : [...storefrontCodeFilter]);
+    setSfSearch('');
+    setSfDropOpen(true);
+  }
+  function toggleSf(code) { setSfPending(p => p.includes(code) ? p.filter(c => c !== code) : [...p, code]); }
+  function handleSfApply() { onStorefrontCodeFilterChange?.(sfPending.length === storefrontCodes.length ? [] : sfPending); setSfDropOpen(false); }
+  function handleSfClear() { setSfPending([]); }
 
   const hasFilters = searchQuery.trim() || statusFilter || dateStartFilter.trim() || dateEndFilter.trim();
   const currentTypeOpt   = SEARCH_TYPE_OPTS.find(o => o.value === searchType)   || SEARCH_TYPE_OPTS[0];
@@ -67,8 +91,62 @@ export default function PromoToolbar({
   return (
     <div className="table-toolbar">
 
+      {/* Storefront Code filter chip — v4 only */}
+      {version === 'v4' && (
+        <div
+          ref={sfRef}
+          onClick={() => !sfDropOpen && openSfDrop()}
+          className={`filter-chip${storefrontCodeFilter.length > 0 ? ' active' : ''}`}
+          style={{ position: 'relative' }}
+        >
+          <span>{storefrontCodeFilter.length > 0 ? `Storefront Code (${storefrontCodeFilter.length})` : 'Storefront Code'}</span>
+          <ChevronDown size={16} />
+
+          {sfDropOpen && (
+            <div className="cat-dropdown" onClick={e => e.stopPropagation()}>
+              <div className="cat-dropdown-search">
+                <div className="cat-dropdown-search-wrap">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input autoFocus type="text" placeholder="Search in filters" value={sfSearch} onChange={e => setSfSearch(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="cat-dropdown-item cat-dropdown-select-all">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={sfPending.length === storefrontCodes.length}
+                    ref={el => { if (el) el.indeterminate = sfPending.length > 0 && sfPending.length < storefrontCodes.length; }}
+                    onChange={e => setSfPending(e.target.checked ? [...storefrontCodes] : [])}
+                  />
+                  Select all
+                </label>
+              </div>
+
+              <div className="cat-dropdown-list">
+                {storefrontCodes.filter(c => c.toLowerCase().includes(sfSearch.toLowerCase())).map(code => (
+                  <div key={code} className="cat-dropdown-item">
+                    <label>
+                      <input type="checkbox" checked={sfPending.includes(code)} onChange={() => toggleSf(code)} />
+                      {code}
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="cat-dropdown-footer">
+                <button className="cat-dropdown-clear" onClick={handleSfClear}>Clear All</button>
+                <button className="cat-dropdown-apply" onClick={handleSfApply}>Apply</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Search bar — split addon + input */}
-      <div className="search-combo">
+      {version !== 'v4' && <div className="search-combo">
         <div
           className="search-combo-type"
           ref={typeRef}
@@ -120,7 +198,7 @@ export default function PromoToolbar({
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
         </button>
-      </div>
+      </div>}
 
       {/* Promotion Date chip */}
       <div
@@ -230,6 +308,52 @@ export default function PromoToolbar({
           </div>
         )}
       </div>
+
+      {/* Cycle chip — v4 only */}
+      {version === 'v4' && (
+        <div
+          className={`filter-chip${cycleSort !== 'current' ? ' active' : ''}`}
+          ref={cycleRef}
+          onClick={() => setCycleDropOpen(p => !p)}
+        >
+          <span>Cycle</span>
+          <ChevronDown size={16} />
+
+          {cycleDropOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 999,
+              background: '#fff', border: '1px solid #D4D4D4', borderRadius: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,.12)', minWidth: '200px', padding: '4px 0', fontSize: '14px',
+            }} onClick={e => e.stopPropagation()}>
+              {CYCLE_OPTS.map(opt => {
+                const isCurrent = opt.value === cycleSort;
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => { onCycleSortChange(opt.value); setCycleDropOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '9px',
+                      padding: '9px 14px', cursor: 'pointer',
+                      background: isCurrent ? '#ECEAFD' : '',
+                      fontWeight: isCurrent ? '500' : '400',
+                      color: isCurrent ? '#5244EE' : '#1E1E1E',
+                    }}
+                    onMouseEnter={e => { if (!isCurrent) e.currentTarget.style.background = '#F5F5F5'; }}
+                    onMouseLeave={e => { if (!isCurrent) e.currentTarget.style.background = ''; }}
+                  >
+                    <span>{opt.label}</span>
+                    {isCurrent && (
+                      <span style={{ marginLeft: 'auto' }}>
+                        <svg width="12" height="12" fill="none" stroke="#5244EE" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Clear All */}
       {hasFilters && (
