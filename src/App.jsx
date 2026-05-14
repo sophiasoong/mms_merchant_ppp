@@ -179,9 +179,11 @@ export default function App() {
       p.id === promo.id ? { ...p, status: 'pending_confirm' } : p
     );
     setPromotions(updated);
-    const updatedPromo = updated.find(p => p.id === promo.id);
-    showSku(updatedPromo);
-  }, [promotions, showSku]);
+    if (version !== 'v4') {
+      const updatedPromo = updated.find(p => p.id === promo.id);
+      showSku(updatedPromo);
+    }
+  }, [promotions, showSku, version]);
 
   // ── Exit Program ────────────────────────────────────────────
   const handleExitProgram = useCallback((promoId) => {
