@@ -74,7 +74,7 @@ export default function ActionPanel({ promo, viewMode = 'edit', version = 'v1', 
               <button className="ap-btn ap-btn-outline" onClick={onSaveAsDraft}>Save as Draft</button>
             </>
           )}
-          <button className="ap-btn ap-btn-outline" onClick={onAuditHistory}>Audit History</button>
+          <button className="ap-btn ap-btn-outline" onClick={onAuditHistory}>Log</button>
         </div>
       </div>
     </div>

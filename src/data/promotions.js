@@ -60,11 +60,11 @@ export const AUDIT_DATA = {
 // Store-level status data for the "Program Status by Stores" detail view
 // Matches dashboard counts: Open×2, Exit Rejected×1, Exit Scheduled×3, Opted Out×2
 export const STORE_STATUS_DATA = [
-  { storefrontCode: 'H2748138', status: 'open' },
-  { storefrontCode: 'H4981529', status: 'enrolled',       action: 'exit' },
-  { storefrontCode: 'H5413880', status: 'enrolled',       action: 'exit', showInfo: true },
-  { storefrontCode: 'H6234571', status: 'exit_scheduled' },
-  { storefrontCode: 'H9001234', status: 'opted_out' },
+  { storefrontCode: 'H2748138', status: 'open',           hideLog: true,               firstJoinDate: null,         lastJoinDate: null         },
+  { storefrontCode: 'H4981529', status: 'enrolled',       action: 'exit',              firstJoinDate: '2024-08-01', lastJoinDate: '2024-08-01' },
+  { storefrontCode: 'H5413880', status: 'enrolled',       action: 'exit', showInfo: true, firstJoinDate: '2024-10-01', lastJoinDate: '2026-01-01' },
+  { storefrontCode: 'H6234571', status: 'exit_scheduled', firstJoinDate: '2025-03-01', lastJoinDate: '2026-03-01' },
+  { storefrontCode: 'H9001234', status: 'opted_out',      firstJoinDate: '2025-01-01', lastJoinDate: '2025-07-01' },
 ];
 
 export const DIALOG_CONFIG = {

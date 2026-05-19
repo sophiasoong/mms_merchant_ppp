@@ -45,8 +45,9 @@ const L2_LEFT = SIDEBAR_W + PANEL_GAP;
 const L3_LEFT = SIDEBAR_W + PANEL_GAP + FLYOUT_W + PANEL_GAP;
 
 export default function Sidebar({ open = true, version, v4SubPage, onV4SubPageChange, onNavigateToList }) {
-  const pmRef    = useRef(null);
-  const hideTimer = useRef(null);
+  const pmRef      = useRef(null);
+  const sidebarRef = useRef(null);
+  const hideTimer  = useRef(null);
   const [pmTop,   setPmTop]   = useState(0);
   const [showL2,  setShowL2]  = useState(false);
   const [showL3,  setShowL3]  = useState(false);
@@ -59,11 +60,25 @@ export default function Sidebar({ open = true, version, v4SubPage, onV4SubPageCh
     };
     measure();
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const sidebarEl = sidebarRef.current;
+    if (sidebarEl) sidebarEl.addEventListener('scroll', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      if (sidebarEl) sidebarEl.removeEventListener('scroll', measure);
+    };
   }, [version, open]);
 
-  // L3 aligns vertically with PPP inside the L2 panel
-  const l3Top = pmTop + FLYOUT_PAD + PPP_INDEX_IN_L2 * (ITEM_H + FLYOUT_GAP);
+  // Clamp flyout top so it never overflows the viewport bottom (8px margin)
+  const L2_ITEMS = 4;
+  const L3_ITEMS = 2;
+  const flyoutH = (n) => FLYOUT_PAD * 2 + n * ITEM_H + (n - 1) * FLYOUT_GAP;
+  const clamp = (top, h) => Math.min(top, window.innerHeight - h - 8);
+
+  const l2TopClamped = clamp(pmTop, flyoutH(L2_ITEMS));
+
+  // L3 aligns vertically with PPP inside the L2 panel, then clamped
+  const l3TopRaw = l2TopClamped + FLYOUT_PAD + PPP_INDEX_IN_L2 * (ITEM_H + FLYOUT_GAP);
+  const l3Top    = clamp(l3TopRaw, flyoutH(L3_ITEMS));
 
   // ── hover helpers ────────────────────────────────────────────
   function clearHide() { clearTimeout(hideTimer.current); }
@@ -92,7 +107,7 @@ export default function Sidebar({ open = true, version, v4SubPage, onV4SubPageCh
   const l3Leave = scheduleHide;
 
   return (
-    <aside className={`sidebar${open ? '' : ' collapsed'}`}>
+    <aside ref={sidebarRef} className={`sidebar${open ? '' : ' collapsed'}`}>
       <div className="sidebar-menu">
 
         <SidebarGroup label="Main">
@@ -187,7 +202,7 @@ export default function Sidebar({ open = true, version, v4SubPage, onV4SubPageCh
       {version === 'v4' && open && showL2 && (
         <div
           className="sidebar-flyout"
-          style={{ left: L2_LEFT, top: pmTop }}
+          style={{ left: L2_LEFT, top: l2TopClamped }}
           onMouseEnter={l2Enter}
           onMouseLeave={l2Leave}
         >

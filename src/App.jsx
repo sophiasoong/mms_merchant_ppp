@@ -15,6 +15,10 @@ import { SKU_ROWS_INITIAL } from './data/skus.js';
 // Generate merchant's own storefront code once per session
 const MERCHANT_CODE = 'H2748138';
 
+// Storefront codes shown in the enrollment (T&C) modal
+// Separate from STORE_STATUS_DATA so Program Settings page is unaffected
+const ENROLLMENT_STOREFRONT_CODES = ['H2748138', 'H3156892', 'H7234561'];
+
 export default function App() {
   // ── View state ──────────────────────────────────────────────
   const [view, setView] = useState('list'); // 'list' | 'sku'
@@ -47,7 +51,7 @@ export default function App() {
   const [dateEndFilter, setDateEndFilter] = useState('');
 
   // ── Version tab state ────────────────────────────────────────
-  const [version, setVersion] = useState('v1');
+  const [version, setVersion] = useState('v4');
 
   // ── v4 sub-page (lifted so Sidebar can drive it) ─────────────
   const [v4SubPage, setV4SubPage] = useState('program-cycles');
@@ -91,6 +95,14 @@ export default function App() {
         setConfirmCheckedIds(allIds);
         setView('confirm');
       }
+    } else if (v === 'v4-overview') {
+      setVersion('v4');
+    } else if (v === 'v4-cycles') {
+      setVersion('v4');
+      setV4SubPage('program-cycles');
+    } else if (v === 'v4-settings') {
+      setVersion('v4');
+      setV4SubPage('program-settings');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -324,10 +336,11 @@ export default function App() {
         open={tcModalOpen}
         promo={tcPromo}
         storefrontCode={MERCHANT_CODE}
-        storefrontCodes={STORE_STATUS_DATA.filter(r => r.status === 'open').map(r => r.storefrontCode)}
+        storefrontCodes={ENROLLMENT_STOREFRONT_CODES}
         readOnly={tcReadOnly}
         showStoreSelection={tcShowStores}
         onClose={() => { setTcModalOpen(false); setTcPromo(null); setTcReadOnly(false); setTcShowStores(false); }}
+        onViewMore={() => { setTcModalOpen(false); setTcPromo(null); setTcReadOnly(false); setTcShowStores(false); setView('list'); setV4SubPage('program-settings'); }}
         onJoin={handleJoinPPP}
       />
       <ConfirmDialog

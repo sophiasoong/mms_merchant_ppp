@@ -4,7 +4,7 @@ function fmtDate(dt) {
   return dt.toISOString().slice(0, 10);
 }
 
-export default function TcModal({ open, promo, storefrontCode, storefrontCodes = [], showStoreSelection = false, onClose, onJoin, readOnly = false }) {
+export default function TcModal({ open, promo, storefrontCode, storefrontCodes = [], showStoreSelection = false, onClose, onJoin, onViewMore, readOnly = false }) {
   const [agreed, setAgreed] = useState(false);
   const [selectedCodes, setSelectedCodes] = useState(() => new Set(storefrontCodes));
 
@@ -183,7 +183,7 @@ export default function TcModal({ open, promo, storefrontCode, storefrontCodes =
         {/* Footer — hidden in read-only mode */}
         {!readOnly && (
           <div className="tc-footer">
-            <button className="tc-btn-learn" onClick={handleClose}>Learn More</button>
+            <button className="tc-btn-learn" onClick={onViewMore || handleClose}>View More</button>
             <button className="tc-btn-join" disabled={!agreed || selectedCodes.size === 0} onClick={handleJoin}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
               Join Program

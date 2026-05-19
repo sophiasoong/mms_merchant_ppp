@@ -96,6 +96,8 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
               <tr>
                 <th>Storefront Code</th>
                 <th>Program Status</th>
+                <th>First Join Date</th>
+                <th>Last Join Date</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -109,6 +111,8 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
                   <td>
                     <StatusBadge status={effectiveStatus} showErrorInfo={showErrorInfo} />
                   </td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{row.firstJoinDate ?? '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{row.lastJoinDate ?? '—'}</td>
                   <td>
                     <div className="ssd-actions">
                       {/* Enroll or Exit Program */}
@@ -124,12 +128,14 @@ export default function StoreStatusDetail({ onBack, version, promotions = [], on
                         </button>
                       )}
                       {/* Audit History */}
-                      <button
-                        className="ssd-ghost-btn"
-                        onClick={() => setAuditStore(row.storefrontCode)}
-                      >
-                        Log
-                      </button>
+                      {!row.hideLog && (
+                        <button
+                          className="ssd-ghost-btn"
+                          onClick={() => setAuditStore(row.storefrontCode)}
+                        >
+                          Log
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
